@@ -120,7 +120,7 @@
 .landing-featured strong { color: var(--button); }
 .landing-featured h3 { font-size: clamp(24px, 3vw, 39px); font-weight: 720; letter-spacing: -.043em; line-height: 1.1; margin-block: 8px 12px; }
 .landing-featured p { color: var(--subtle); margin-bottom: 20px; }
-.landing-study-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 22px; }
+.landing-study-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 12px; margin-top: 22px; }
 .landing-study-buttons button { border-top: 2px solid #74637d; padding: 12px 3px; color: #e5d8e8; font-size: 13px; font-weight: 650; }
 .landing-study-buttons button[aria-pressed="true"], .landing-study-buttons button:hover { color: white; border-top-color: #ff489b; }
 

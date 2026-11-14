@@ -6,11 +6,12 @@ import { ResearchFlow, WorkflowFlow, studyUrl } from "./research-flow"
 import "./landing.css"
 
 const summaries: Record<string, string> = {
-  flex: "How droplets of liquid fuel burn and extinguish in microgravity.",
-  bass: "How airflow affects burning and extinguishment in solid materials.",
-  saffire: "How fire spreads in a cargo spacecraft.",
-  acme: "How gaseous flames change shape and transfer heat in microgravity.",
-  sofie: "How oxygen concentration affects ignition and extinguishment in solid fuels.",
+  "flex-1": "How droplets of liquid fuel burn, form cool flames, and extinguish in microgravity.",
+  "bass-bass-ii-bass-m": "How airflow affects burning and extinguishment in solid materials.",
+  "saffire-i-iii": "How fire spreads in a full-scale cargo spacecraft.",
+  "acme-bre": "How a gaseous porous burner emulates solid material flammability in still air.",
+  "sofie-mist": "How reduced pressure and oxygen concentration affect solid fuel ignition.",
+  "same-same-r": "How microgravity smoke particle size distribution affects spacecraft fire detection.",
 }
 
 const navigation = [
@@ -44,7 +45,7 @@ function ExperimentSearch({ dialog }: { dialog: { current: HTMLDialogElement | n
 export function Landing() {
   const dialog = useRef<HTMLDialogElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [featuredId, setFeaturedId] = useState("flex")
+  const [featuredId, setFeaturedId] = useState("flex-1")
   const featured = research.find(({ id }) => id === featuredId) ?? research[0]
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export function Landing() {
           <p>Pick an experiment to open its overview, findings, and sources.</p>
           <div className="landing-terminal">
             <div className="landing-terminal-dots" aria-hidden="true"><i /><i /><i /></div>
-            <a href={studyUrl("flex")}>Open <strong>FLEX</strong> <ArrowRight size={17} /></a>
+            <a href={studyUrl("flex-1")}>Open <strong>FLEX-1</strong> <ArrowRight size={17} /></a>
           </div>
           <a href="/explorer" className="landing-dark-footer">Open the research workspace <ArrowRight size={17} /></a>
         </div>
@@ -119,7 +120,7 @@ export function Landing() {
           <WorkflowFlow />
         </article>
         <article className="landing-feature landing-feature-reverse">
-          <div><h2>Read the evidence</h2><p>Review what a study tested, what it found, and where the results were published.</p><a className="landing-button" href={studyUrl("flex")}>Explore FLEX</a></div>
+          <div><h2>Read the evidence</h2><p>Review what a study tested, what it found, and where the results were published.</p><a className="landing-button" href={studyUrl("flex-1")}>Explore FLEX-1</a></div>
           <figure className="landing-feature-image"><img src={flame} alt="Illustration of a spherical blue flame surrounding a fuel droplet" loading="lazy" /><figcaption>FLEX · Flame illustration</figcaption></figure>
         </article>
         <article className="landing-feature">

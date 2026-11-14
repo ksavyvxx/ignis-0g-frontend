@@ -1,123 +1,308 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { ArrowUpRight, Send, Bot } from "@/components/ui/icons"
-import { useQuery } from "@tanstack/react-query"
-import { studyQueries } from "@/api/queries"
+import { ArrowUpRight, Bot, Send, Sparkles } from "@/components/ui/icons"
+import { ApiError, api } from "@/api/client"
 import { Button } from "@/components/ui/button"
-import type { Study } from "@/domain/types"
-import type { View } from "./study-panel"
-import { QueryFailure, QueryLoading } from "./query-feedback"
-import { catalogEntry } from "@/mocks/catalog"
+import type { ChatMessage, ChatResponse, Citation, StudySummary } from "@/domain/types"
 
-const nasaOverview = "https://www.nasa.gov/missions/station/iss-research/studying-combustion-and-fire-safety/"
-const nasaStudies: Record<string, string> = {
-  flex: "https://psi.nasa.gov/physci/repo/data/investigations/PSI-69",
-  acme: "https://science.nasa.gov/mission/acme/",
+interface Exchange {
+  question: string
+  response?: ChatResponse
+  error?: string
 }
 
-type Exchange = { question: string; answer: string; source: string; sourceTitle: string }
+export function useStudyChat(study: StudySummary | undefined) {
+  const [scope, setScope] = useState<"study" | "global">(study ? "study" : "global")
+  const [historyByScope, setHistoryByScope] = useState<Record<string, Exchange[]>>({})
+  const [pending, setPending] = useState(false)
 
-export function useStudyChat(study: Study | undefined, view: View) {
-  const sources = useQuery({ ...studyQueries.sources(study?.id ?? ""), enabled: Boolean(study) })
-  const findings = useQuery({ ...studyQueries.findings(study?.id ?? ""), enabled: Boolean(study) })
-  const currentSource = sources.data?.find(({ url }) => url)
-  const isDataset = study?.id === "flex" && (view === "measurements" || view === "visualization")
-  const [history, setHistory] = useState<Record<string, Exchange[]>>({})
-  const code = study && (catalogEntry(study.id)?.code ?? study.title)
-  const exchanges = study ? history[study.id] ?? [] : []
+  const activeKey = scope === "study" && study ? `study:${study.id}` : "global"
+  const exchanges = historyByScope[activeKey] ?? []
 
-  function send(question: string) {
+  useEffect(() => {
+    if (!study && scope === "study") setScope("global")
+  }, [study, scope])
+
+  async function send(question: string) {
     const text = question.trim()
-    if (!study || !text) return
-    const source = currentSource?.url ?? (Object.hasOwn(nasaStudies, study.id) ? nasaStudies[study.id] : undefined)
-    const overviewQuestion = /что изучает|цель|о ч[её]м|расскажи|предмет/i.test(text)
-    const sourceQuestion = /источник|ссылк|nasa/i.test(text)
-    const answer = /вывод/i.test(text)
-      ? findings.data?.map(({ title }) => title).join("\n") || "Для выбранного исследования нет доступных выводов."
-      : isDataset && /услови|данн|измерен/i.test(text)
-        ? "В эксперименте использовались метанол и смесь из 21% кислорода и 79% азота при давлении около 1 атм."
-        : overviewQuestion ? study.summary
-      : sourceQuestion ? `Материалы NASA по теме исследования ${code} доступны по ссылке ниже.`
-      : "На этот вопрос пока нет готового ответа. Попробуйте спросить о цели исследования или запросить источник NASA."
-    const exchange = {
-      question: text,
-      answer,
-      source: source ?? nasaOverview,
-      sourceTitle: currentSource?.title ?? (source ? `NASA · ${code}` : "NASA · Горение и пожарная безопасность"),
+    if (!text || pending) return
+    const targetScope = scope === "study" && study ? "study" : "global"
+    const key = targetScope === "study" && study ? `study:${study.id}` : "global"
+    const prior = historyByScope[key] ?? []
+
+    const chatHistory: ChatMessage[] = []
+    for (const ex of prior.slice(-6)) {
+      if (ex.response) {
+        chatHistory.push({ role: "user", content: ex.question.slice(0, 2000) })
+        chatHistory.push({ role: "assistant", content: ex.response.answer.slice(0, 2000) })
+      }
     }
-    setHistory((previous) => ({
-      ...previous,
-      [study.id]: [...(previous[study.id] ?? []), exchange],
+
+    setHistoryByScope((prev) => ({
+      ...prev,
+      [key]: [...(prev[key] ?? []), { question: text }],
     }))
+    setPending(true)
+
+    try {
+      const response = await api.askAssistant({
+        message: text,
+        study_id: targetScope === "study" && study ? study.id : null,
+        history: chatHistory,
+        scope: targetScope,
+      })
+      setHistoryByScope((prev) => {
+        const list = [...(prev[key] ?? [])]
+        list[list.length - 1] = { question: text, response }
+        return { ...prev, [key]: list }
+      })
+    } catch (err) {
+      let msg = "Не удалось получить ответ от ИИ-ассистента."
+      if (err instanceof ApiError) {
+        if (err.status === 429) {
+          msg = `Превышен лимит запросов.${err.retryAfter ? ` Повторите через ${err.retryAfter} с.` : ""}`
+        } else if (err.status === 503) {
+          msg = "Сервис ИИ временно недоступен (503)."
+        } else if (err.status === 504) {
+          msg = "Превышено время ожидания ответа ИИ (504)."
+        } else {
+          msg = err.message
+        }
+      }
+      setHistoryByScope((prev) => {
+        const list = [...(prev[key] ?? [])]
+        list[list.length - 1] = { question: text, error: msg }
+        return { ...prev, [key]: list }
+      })
+    } finally {
+      setPending(false)
+    }
   }
 
-  return { code, exchanges, send, sources }
+  function clear() {
+    setHistoryByScope((prev) => ({ ...prev, [activeKey]: [] }))
+  }
+
+  return {
+    scope,
+    setScope,
+    study,
+    exchanges,
+    pending,
+    send,
+    clear,
+  }
 }
 
-export function AssistantChat({ chat, onOpenPage }: { chat: ReturnType<typeof useStudyChat>; onOpenPage?: () => void }) {
+function CitationList({ citations }: { citations: Citation[] }) {
+  if (!citations.length) return null
+  return (
+    <div className="chat-citations">
+      {citations.map((c, idx) => (
+        <details key={`${c.chunk_id}-${idx}`}>
+          <summary>
+            [{idx + 1}] {c.title}
+            {c.locator ? ` · ${c.locator}` : ""}
+          </summary>
+          <p>{c.excerpt}</p>
+          <a href={c.url} target="_blank" rel="noreferrer">
+            Открыть источник <ArrowUpRight size={13} />
+          </a>
+        </details>
+      ))}
+    </div>
+  )
+}
+
+export function AssistantChat({
+  chat,
+  onOpenPage,
+  onSelectStudy,
+}: {
+  chat: ReturnType<typeof useStudyChat>
+  onOpenPage?: () => void
+  onSelectStudy?: (id: string) => void
+}) {
   const [draft, setDraft] = useState("")
   const log = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
-  const { code, exchanges, send, sources } = chat
+  const { scope, setScope, study, exchanges, pending, send, clear } = chat
 
   useEffect(() => {
     if (log.current) log.current.scrollTop = log.current.scrollHeight
-  }, [exchanges.length])
+  }, [exchanges.length, pending])
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!code || !draft.trim()) return
-    send(draft)
+    if (!draft.trim() || pending) return
+    void send(draft)
     setDraft("")
     input.current?.focus()
   }
 
+  const suggestions =
+    scope === "study" && study
+      ? [
+          `Какие основные выводы в ${study.title.split(" (")[0]}?`,
+          `Какие условия O₂, давления и оборудования использовались?`,
+          `Как результаты применимы к лунной базе (34% O₂)?`,
+        ]
+      : [
+          "Какие эксперименты PSI наиболее важны для лунной базы (≥30% O₂)?",
+          "Как микрогравитация влияет на датчики дыма (SAME)?",
+          "Почему стандарт NASA-STD-6001 Test 1 не всегда консервативен в 0g?",
+        ]
+
   return (
     <section className="panel panel-padding assistant">
       <div className="assistant-heading">
-        <h2><Bot size={20} /> ИИ-ассистент</h2>
-        {onOpenPage && <Button type="button" variant="ghost" size="icon" aria-label="Открыть страницу ассистента" title="Открыть страницу ассистента" onClick={onOpenPage}><ArrowUpRight size={18} /></Button>}
+        <h2>
+          <Bot size={20} /> ИИ-ассистент PSI
+        </h2>
+        <div className="assistant-head-actions">
+          {exchanges.length > 0 && (
+            <button type="button" className="chip-btn" onClick={clear}>
+              Очистить
+            </button>
+          )}
+          {onOpenPage && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Открыть страницу ассистента"
+              title="Развернуть на весь экран"
+              onClick={onOpenPage}
+            >
+              <ArrowUpRight size={18} />
+            </Button>
+          )}
+        </div>
       </div>
-      {code && <p className="assistant-study">Исследование <strong>{code}</strong></p>}
+
+      <div className="assistant-scope-toggle" role="group" aria-label="Область поиска ассистента">
+        <button
+          type="button"
+          disabled={!study}
+          aria-pressed={scope === "study"}
+          onClick={() => setScope("study")}
+        >
+          {study ? study.category : "Исследование"}
+        </button>
+        <button
+          type="button"
+          aria-pressed={scope === "global"}
+          onClick={() => setScope("global")}
+        >
+          Весь каталог PSI
+        </button>
+      </div>
+
+      {scope === "study" && study && (
+        <p className="assistant-study">
+          Контекст: <strong>{study.title}</strong>
+        </p>
+      )}
+
       <div className="chat-body" ref={log}>
-      {code ? <>
-        {sources.isPending && <QueryLoading label="Загрузка источников…" />}
-        {sources.isError && <QueryFailure label="Не удалось загрузить источники." fetching={sources.isFetching} retry={() => void sources.refetch()} />}
-      </> : <p className="muted">Выберите исследование, чтобы начать чат.</p>}
-      <div className="chat-log" role="log" aria-label="История сообщений" tabIndex={exchanges.length ? 0 : undefined}>
-        {exchanges.map(({ question, answer, source, sourceTitle }, index) => (
-          <div className="chat-exchange" key={index}>
-            <p className="chat-message chat-question"><strong>Вы</strong>{question}</p>
-            <div className="chat-message"><strong>Ответ из каталога</strong><p>{answer}</p>
-              <a href={source} target="_blank" rel="noreferrer">{sourceTitle} <ArrowUpRight size={13} /></a>
+        <div className="chat-log" role="log" aria-label="История сообщений" tabIndex={exchanges.length ? 0 : undefined}>
+          {exchanges.map(({ question, response, error }, index) => (
+            <div className="chat-exchange" key={index}>
+              <p className="chat-message chat-question">
+                <strong>Вы</strong>
+                {question}
+              </p>
+              {!response && !error && (
+                <div className="chat-message">
+                  <strong>Поиск по источникам NASA…</strong>
+                  <p className="muted">Формирую ответ с цитатами…</p>
+                </div>
+              )}
+              {error && (
+                <div className="chat-message chat-error">
+                  <strong>Ошибка запроса</strong>
+                  <p>{error}</p>
+                </div>
+              )}
+              {response && (
+                <div className="chat-message">
+                  <strong>
+                    {response.status === "insufficient_evidence"
+                      ? "Недостаточно данных в источниках"
+                      : "Ответ по базе PSI"}
+                  </strong>
+                  <p>{response.answer}</p>
+                  <CitationList citations={response.citations} />
+                  {response.related_study_ids.length > 0 && onSelectStudy && (
+                    <div className="chat-related-studies">
+                      <span>Связанные:</span>
+                      {response.related_study_ids.map((id) => (
+                        <button key={id} type="button" className="chip-btn" onClick={() => onSelectStudy(id)}>
+                          {id}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {response.suggested_questions.length > 0 && (
+                    <div className="chat-followups">
+                      {response.suggested_questions.map((sq) => (
+                        <button key={sq} type="button" onClick={() => void send(sq)}>
+                          <Sparkles size={12} /> {sq}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {exchanges.length === 0 && (
+          <div className="chat-start">
+            <p>Быстрые вопросы по базе NASA PSI</p>
+            <div className="chat-suggestions">
+              {suggestions.map((q) => (
+                <Button
+                  key={q}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void send(q)
+                    input.current?.focus()
+                  }}
+                >
+                  {q}
+                </Button>
+              ))}
             </div>
           </div>
-        ))}
+        )}
       </div>
-      {code && exchanges.length === 0 && (
-        <div className="chat-start">
-          <p>Вопросы об исследовании</p>
-          <div className="chat-suggestions">
-            {[
-              { label: "Что изучает эксперимент?", question: `Что изучает ${code}?` },
-              { label: "Какие есть выводы?", question: "Какие есть выводы?" },
-              { label: "Источники NASA", question: "Показать источники NASA" },
-            ].map(({ label, question }) => (
-              <Button key={label} type="button" variant="outline" size="sm"
-                onClick={() => { send(question); input.current?.focus() }}>{label}</Button>
-            ))}
-          </div>
-        </div>
-      )}
-      </div>
+
       <form className="chat-form" onSubmit={submit}>
-        <textarea ref={input} rows={1} aria-label="Сообщение ассистенту" placeholder="Задать вопрос об исследовании…" maxLength={1000}
-          disabled={!code} value={draft} onChange={(event) => setDraft(event.target.value)}
+        <textarea
+          ref={input}
+          rows={1}
+          aria-label="Сообщение ассистенту"
+          placeholder={
+            scope === "study" && study
+              ? `Спросить о ${study.title.split(" (")[0]}…`
+              : "Спросить по всему каталогу PSI…"
+          }
+          maxLength={2000}
+          disabled={pending}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
             event.preventDefault()
             event.currentTarget.form?.requestSubmit()
-          }} />
-        <Button type="submit" size="icon" aria-label="Отправить сообщение" disabled={!code || !draft.trim()}><Send size={16} /></Button>
+          }}
+        />
+        <Button type="submit" size="icon" aria-label="Отправить сообщение" disabled={pending || !draft.trim()}>
+          <Send size={16} />
+        </Button>
       </form>
     </section>
   )

@@ -9,8 +9,8 @@ export const studyUrl = (id: string) => `/explorer?study=${encodeURIComponent(id
 
 const groups = [
   { label: "All experiments", ids: research.map(({ id }) => id) },
-  { label: "Liquid & gas", ids: ["flex", "acme"] },
-  { label: "Solid materials", ids: ["bass", "saffire", "sofie"] },
+  { label: "Liquid & gas", ids: ["flex-1", "acme-bre"] },
+  { label: "Solid & smoke", ids: ["bass-bass-ii-bass-m", "saffire-i-iii", "sofie-mist", "same-same-r"] },
 ]
 
 type FlowNode = Node<{ title: string; kind: "experiment" | "fuel" | "scale" | "preview"; compact?: boolean }, "research">
@@ -56,7 +56,7 @@ function NodeContent({ kind, settings }: { kind: FlowNode["data"]["kind"]; setti
   return <a className="nodrag research-preview" href={studyUrl(study.id)} aria-label={`Open ${study.title}`}>
     <div className="research-preview-art">
       <div style={{ transform: `scale(${scale / 100})` }}>
-        {study.id === "flex" ? <img src={flame} alt="" /> : <FlaskConical size={82} />}
+        {study.id === "flex-1" ? <img src={flame} alt="" /> : <FlaskConical size={82} />}
       </div>
     </div>
     <span><strong>{catalogEntry(study.id)?.code}</strong><small>{study.title}</small><ArrowRight size={15} /></span>
@@ -77,7 +77,7 @@ const nodeTypes = { research: InteractiveNode }
 
 export function ResearchFlow() {
   const [group, updateGroup] = useState(0)
-  const [studyId, setStudyId] = useState("flex")
+  const [studyId, setStudyId] = useState("flex-1")
   const [scale, setScale] = useState(100)
   const compact = useSyncExternalStore(subscribeToCompactLayout, () => compactQuery.matches)
   const settings: Settings = {
