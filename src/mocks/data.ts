@@ -3,8 +3,14 @@ import { research } from "./catalog"
 
 export const studies = research
 
+const nasaSources: Record<string, string> = {
+  flex: "https://ntrs.nasa.gov/citations/20150023456",
+  acme: "https://science.nasa.gov/mission/acme/",
+  saffire: "https://www.nasa.gov/centers-and-facilities/glenn/flame-burns-out-on-nasas-long-running-spacecraft-fire-experiment/",
+}
+
 export const sources: Source[] = research.map(({ id, title }) => ({
-  id: `${id}-overview`, studyId: id, title: `${title} · обзор эксперимента`, kind: "document", url: null,
+  id: `${id}-overview`, studyId: id, title: `${title} · обзор эксперимента`, kind: "document", url: nasaSources[id] ?? "https://www.nasa.gov/missions/station/iss-research/studying-combustion-and-fire-safety/",
 }))
 
 export const findings: Finding[] = [

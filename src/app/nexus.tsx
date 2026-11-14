@@ -5,6 +5,7 @@ import { ArrowRight, Network } from "@/components/ui/icons"
 import { Button } from "@/components/ui/button"
 import type { Study } from "@/domain/types"
 import { catalogEntry } from "@/mocks/catalog"
+import { QueryFailure, QueryLoading } from "./query-feedback"
 
 const connections = [
   { name: "Теплоперенос", kind: "Явление", ids: ["flex", "acme"], description: "FLEX изучает горение капель, а ACME — структуру газового пламени и перенос тепла." },
@@ -15,8 +16,8 @@ const connections = [
 
 function StudyFindings({ id }: { id: string }) {
   const findings = useQuery(studyQueries.findings(id))
-  if (findings.isPending) return <p role="status">Загрузка выводов…</p>
-  if (findings.isError) return <p role="alert">Не удалось загрузить выводы.</p>
+  if (findings.isPending) return <QueryLoading label="Загрузка выводов…" />
+  if (findings.isError) return <QueryFailure label="Не удалось загрузить выводы." fetching={findings.isFetching} retry={() => void findings.refetch()} />
   if (!findings.data.length) return <p className="muted">В каталоге пока нет выводов для этого исследования.</p>
   return <ul className="nexus-findings">{findings.data.map(({ id, title }) => <li key={id}>{title}</li>)}</ul>
 }
@@ -24,19 +25,35 @@ function StudyFindings({ id }: { id: string }) {
 export function Nexus({ studies, onStudy }: { studies: Study[]; onStudy: (id: string) => void }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeStudy, setActiveStudy] = useState<string>()
-  const connection = connections[activeIndex]
-  const connected = studies.filter(({ id }) => connection.ids.includes(id))
+  const [search, setSearch] = useState("")
+  const [kindFilter, setKindFilter] = useState("")
+  const term = search.trim().toLocaleLowerCase("ru")
+  const visibleConnections = connections.filter(({ name, kind, ids }) =>
+    (!kindFilter || kind === kindFilter) && (
+      name.toLocaleLowerCase("ru").includes(term) ||
+      ids.some((id) => studies.some((study) => study.id === id && `${id} ${study.title}`.toLocaleLowerCase("ru").includes(term)))
+    ),
+  )
+  const connection = visibleConnections.find((item) => item === connections[activeIndex]) ?? visibleConnections[0]
+  const connected = studies.filter(({ id }) => connection?.ids.includes(id))
   const selected = connected.find(({ id }) => id === activeStudy) ?? connected[0]
 
   return (
     <section className="panel panel-padding nexus-panel">
       <h2><Network size={18} /> Nexus</h2>
       <p className="muted">Выберите явление или условие, чтобы увидеть связи между исследованиями.</p>
+      <div className="data-toolbar">
+        <label>Поиск связей<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Например, FLEX" /></label>
+        <label>Тип связи<select value={kindFilter} onChange={(event) => setKindFilter(event.target.value)}>
+          <option value="">Все типы</option><option>Явление</option><option>Условие</option>
+        </select></label>
+      </div>
+      {!connection ? <p className="muted" role="status">Связи не найдены.</p> : <>
       <div className="nexus-map">
         <div className="nexus-topics" role="group" aria-label="Научные связи">
-          {connections.map(({ name, kind }, index) => (
-            <button type="button" key={name} aria-pressed={index === activeIndex} onClick={() => setActiveIndex(index)}>
-              <small>{kind}</small>{name}
+          {visibleConnections.map((item) => (
+            <button type="button" key={item.name} aria-pressed={item === connection} onClick={() => setActiveIndex(connections.indexOf(item))}>
+              <small>{item.kind}</small>{item.name}
             </button>
           ))}
         </div>
@@ -58,6 +75,7 @@ export function Nexus({ studies, onStudy }: { studies: Study[]; onStudy: (id: st
           <Button variant="outline" onClick={() => onStudy(selected.id)}>Открыть исследование <ArrowRight size={15} /></Button>
         </>}
       </div>
+      </>}
     </section>
   )
 }

@@ -1,0 +1,40 @@
+:root, .dark {
+  color-scheme: dark;
+  --background: #15120f;
+  --surface-navigation: #211d19;
+  --card: #2b2621;
+  --accent: #39312a;
+  --border: #51463b;
+  --input: #a49585;
+  --foreground: #f1dfd0;
+  --muted-foreground: #d4c3b2;
+  --brand: #ffb86c;
+  --interactive: var(--brand);
+  --accent-hover: #ffd8ae;
+  --accent-soft: #58422d;
+  --accent-ink: #482900;
+  --heading: #f1dfd0;
+  --color-success: #8cae96;
+  --color-warning: var(--brand);
+  --color-error: #e79a95;
+  --link: var(--brand);
+  --ring: var(--brand);
+  --primary: var(--brand);
+  --primary-foreground: var(--accent-ink);
+  --accent-foreground: var(--foreground);
+  --control-radius: 12px;
+  --panel-radius: 20px;
+  --radius: 12px;
+  --space-2: 8px;
+  --space-4: 16px;
+  --rail-width: 232px;
+  --inspector-width: 272px;
+  --workspace-gutter: clamp(16px, 2.4vw, 36px);
+  --section-width: 1120px;
+  --duration: 150ms;
+  --drawer-shadow: 8px 0 26px #0005;
+  --technical-font: "IBM Plex Mono", monospace;
+}
+
+body { font-size: 14px; }
+button, a, select { transition: background-color var(--duration), color var(--duration), border-color var(--duration); }

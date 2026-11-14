@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { BookOpen, ChevronDown, ChevronRight, FlaskConical, Folder, Layers3, Network, Reset, Search, ShieldCheck, SlidersHorizontal, Sparkles, X } from "@/components/ui/icons"
+import { ChevronDown, ChevronRight, FlaskConical, Folder, Network, FileText, Settings, Reset, Search, ShieldCheck, SlidersHorizontal, Bot } from "@/components/ui/icons"
 import type { Study } from "@/domain/types"
 import { catalogEntry, topics } from "@/mocks/catalog"
 
@@ -7,10 +7,10 @@ export const sections = [
   { name: "Исследования", icon: FlaskConical },
   { name: "Граф знаний", icon: Network },
   { name: "Миссии и безопасность", icon: ShieldCheck },
-  { name: "Ассистент", icon: Sparkles },
+  { name: "Ассистент", icon: Bot },
 ] as const
 
-export type Section = typeof sections[number]["name"]
+export type Section = typeof sections[number]["name"] | "Коллекции" | "Источники" | "Настройки"
 
 interface SidebarProps {
   studies: Study[]
@@ -18,57 +18,61 @@ interface SidebarProps {
   section: Section
   onSection: (section: Section) => void
   onStudy: (id: string) => void
-  onClose: () => void
   pending: boolean
   error: boolean
   retry: () => void
 }
 
-export function Sidebar({ studies, activeId, section, onSection, onStudy, onClose, pending, error, retry }: SidebarProps) {
+export function Sidebar({ studies, activeId, section, onSection, onStudy, pending, error, retry }: SidebarProps) {
   const [search, setSearch] = useState("")
   const [topic, setTopic] = useState<number | null>(null)
-  const [status, setStatus] = useState<Study["status"] | "all">("all")
   const [showFilters, setShowFilters] = useState(false)
   const [experimentsOpen, setExperimentsOpen] = useState(true)
-  const [topicsOpen, setTopicsOpen] = useState(true)
   const term = search.trim().toLocaleLowerCase("ru")
   const filtered = studies.filter((study) => {
     const entry = catalogEntry(study.id)
     const studyTopics = entry?.topics ?? []
     const searchable = [study.id, study.title, study.summary, entry?.code, ...studyTopics.map((index) => topics[index])].join(" ")
     return searchable.toLocaleLowerCase("ru").includes(term) &&
-      (topic === null || studyTopics.includes(topic)) &&
-      (status === "all" || study.status === status)
+      (topic === null || studyTopics.includes(topic))
   })
-  const isFiltered = Boolean(term) || topic !== null || status !== "all"
+  const isFiltered = Boolean(term) || topic !== null
 
   function reset() {
     setSearch("")
     setTopic(null)
-    setStatus("all")
     setExperimentsOpen(true)
   }
 
   return (
     <aside className="sidebar" aria-label="Каталог исследований">
-      <div className="mobile-side-head"><strong>Каталог</strong><button className="icon-button" aria-label="Закрыть каталог" onClick={onClose}><X size={18} /></button></div>
+
       <nav aria-label="Разделы" className="side-nav">
-        {sections.map(({ name, icon: Icon }) => (
+        {sections.filter(({ name }) => name !== "Ассистент").map(({ name, icon: Icon }) => (
           <button key={name} aria-current={section === name ? "page" : undefined} onClick={() => onSection(name)}>
             <Icon size={17} />{name}
           </button>
         ))}
       </nav>
       <div className="library">
-        <div className="side-heading"><BookOpen size={15} /> Библиотека</div>
         <div className="search-row">
-          <label className="search-field"><Search size={15} /><input type="search" placeholder="Поиск исследований" aria-label="Поиск исследований" value={search} onChange={(event) => { setSearch(event.target.value); setExperimentsOpen(true) }} /></label>
-          <button className="icon-button" aria-label="Фильтр по статусу" aria-expanded={showFilters} aria-controls="status-filter" onClick={() => setShowFilters(!showFilters)}><SlidersHorizontal size={16} /></button>
+          <label className="search-field"><Search size={15} /><input type="search" placeholder="Поиск" aria-label="Поиск исследований" value={search} onChange={(event) => { setSearch(event.target.value); setExperimentsOpen(true) }} /></label>
+          <button className="icon-button" aria-label="Фильтр по теме" aria-expanded={showFilters} data-filter-active={topic !== null} aria-controls={showFilters ? "topic-filter" : undefined} onClick={() => setShowFilters(!showFilters)}><SlidersHorizontal size={16} /></button>
         </div>
-        {showFilters && <select id="status-filter" aria-label="Статус исследования" value={status} onChange={(event) => { setStatus(event.target.value as typeof status); setExperimentsOpen(true) }}><option value="all">Все статусы</option><option value="completed">Завершённые</option><option value="in_progress">В работе</option><option value="draft">Черновики</option></select>}
+        {showFilters && (
+          <select id="topic-filter" aria-label="Тема исследования" value={topic ?? ""}
+            onChange={(event) => {
+              const value = event.target.value
+              setTopic(value === "" ? null : Number(value))
+              setExperimentsOpen(true)
+            }}>
+            <option value="">Все темы</option>
+            {topics.map((name, index) => <option key={name} value={index}>{name}</option>)}
+          </select>
+        )}
         {isFiltered && <button className="reset-filter" onClick={reset}><Reset size={13} /> Сбросить фильтры</button>}
         <button className="tree-parent" aria-expanded={experimentsOpen} aria-controls="experiments" onClick={() => setExperimentsOpen(!experimentsOpen)}>
-          {experimentsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Folder size={16} /> NASA Experiments <span className="tree-count">{filtered.length}</span>
+          {experimentsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Folder size={16} /> NASA Experiments
         </button>
         {experimentsOpen && (
           <div id="experiments" className="tree-children">
@@ -77,22 +81,23 @@ export function Sidebar({ studies, activeId, section, onSection, onStudy, onClos
             {!pending && !error && filtered.length === 0 && <p role="status">Исследования не найдены</p>}
             {filtered.map((study) => (
               <button className="tree-item" key={study.id} title={study.title} aria-current={activeId === study.id && section === "Исследования" ? "true" : undefined} onClick={() => onStudy(study.id)}>
-                <FlaskConical size={14} /> {catalogEntry(study.id)?.code ?? study.title}
+                {catalogEntry(study.id)?.code ?? study.title}
               </button>
             ))}
           </div>
         )}
-        <button className="tree-parent" aria-expanded={topicsOpen} aria-controls="topics" onClick={() => setTopicsOpen(!topicsOpen)}>
-          {topicsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Layers3 size={16} /> Темы
-        </button>
-        {topicsOpen && (
-          <div id="topics" className="tree-children">
-            {topics.map((name, index) => (
-              <button className="tree-item" key={name} aria-pressed={topic === index} onClick={() => { setTopic(topic === index ? null : index); setExperimentsOpen(true) }}><span className="topic-mark">#</span>{name}</button>
-            ))}
-          </div>
-        )}
+        <nav className="side-nav" aria-label="Библиотека">
+          <button aria-current={section === "Коллекции" ? "page" : undefined} onClick={() => onSection("Коллекции")}><Folder size={17} /> Коллекции</button>
+          <button aria-current={section === "Источники" ? "page" : undefined} onClick={() => onSection("Источники")}><FileText size={17} /> Источники</button>
+        </nav>
       </div>
+      <details className="navigation-group">
+        <summary>Инструменты</summary>
+        <nav className="side-nav" aria-label="Инструменты">
+          <button aria-current={section === "Настройки" ? "page" : undefined} onClick={() => onSection("Настройки")}><Settings size={17} /> Настройки</button>
+          <button aria-current={section === "Ассистент" ? "page" : undefined} onClick={() => onSection("Ассистент")}><Bot size={17} /> Ассистент</button>
+        </nav>
+      </details>
     </aside>
   )
 }

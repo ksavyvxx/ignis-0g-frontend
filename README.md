@@ -48,4 +48,4 @@ function FindingsCount({ studyId }: { studyId: string }) {
 
 `npm run typecheck` проверяет типы, `npm run build` также создаёт сборку в `dist/`, `npm run preview` запускает её локально.
 
-Иконки интерфейса поставляются вместе со сборкой. Источники SVG — [Keyline Icons (MIT)](https://github.com/keyline-icons/keyline-icons) и [Bootstrap Icons (MIT)](https://github.com/twbs/icons).
+Иконки интерфейса используют Lucide. IBM Plex Sans и IBM Plex Mono поставляются локально в латинском и кириллическом начертаниях.

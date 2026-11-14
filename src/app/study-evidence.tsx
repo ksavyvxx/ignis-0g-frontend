@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { ArrowUpRight, ChartNoAxesCombined, FlaskConical, ShieldCheck } from "@/components/ui/icons"
 
 // NASA/TP–2015-216046, Table IX. Methanol tests ending in extinction,
@@ -14,23 +15,37 @@ const format = new Intl.NumberFormat("ru", { maximumFractionDigits: 2 })
 
 export function StudyMeasurements({ studyId, chart = false }: { studyId: string; chart?: boolean }) {
   const hasSamples = studyId === "flex"
-  const axisMaximum = 10
+  const [variable, setVariable] = useState<"seconds" | "diameter">("seconds")
+  const [selectedRun, setSelectedRun] = useState("")
+  const samples = flexSamples.filter(({ run }) => !selectedRun || run === selectedRun)
+  const axisMaximum = variable === "seconds" ? 10 : 3
+  const unit = variable === "seconds" ? "с" : "мм"
 
   return (
     <section className="panel panel-padding measurement-panel">
-      <h2>{chart ? <ChartNoAxesCombined size={17} /> : <FlaskConical size={17} />}{chart ? "Время горения до затухания" : "Серии измерений"}</h2>
+      <h2>{chart ? <ChartNoAxesCombined size={17} /> : <FlaskConical size={17} />}{chart ? "Сравнение испытаний FLEX" : "Экспериментальные измерения"}</h2>
       {!hasSamples ? <p className="muted">Для этого эксперимента пока нет измерений.</p> : (
         <>
           <p className="muted">Метанол · 21% O₂, 79% N₂ · около 1 атм. Выбраны испытания, завершившиеся затуханием.</p>
+          <div className="data-toolbar">
+            <label>Набор данных<select defaultValue="table-ix"><option value="table-ix">NASA · Таблица IX</option></select></label>
+            <label>Испытание<select value={selectedRun} onChange={(event) => setSelectedRun(event.target.value)}>
+              <option value="">Все испытания</option>
+              {flexSamples.map(({ run }) => <option key={run}>{run}</option>)}
+            </select></label>
+            {chart && <label>Переменная<select value={variable} onChange={(event) => setVariable(event.target.value === "diameter" ? "diameter" : "seconds")}>
+              <option value="seconds">Время горения, с</option><option value="diameter">Начальный диаметр, мм</option>
+            </select></label>}
+          </div>
           {chart ? (
             <>
-            <div className="measurement-axis" aria-hidden="true"><span>Диаметр</span><div><span>0</span><span>5</span><span>10 с</span></div></div>
-            <ul className="measurement-chart" aria-label="Начальный диаметр капли и время горения">
-              {flexSamples.map(({ run, diameter, seconds }) => (
-                <li key={run}>
-                  <span>{format.format(diameter)} мм</span>
-                  <div className="measurement-track" aria-hidden="true"><div style={{ width: `${seconds / axisMaximum * 100}%` }} /></div>
-                  <strong>{format.format(seconds)} с</strong>
+            <div className="measurement-axis" aria-hidden="true"><span>Серия</span><div><span>0</span><span>{format.format(axisMaximum / 2)}</span><span>{axisMaximum} {unit}</span></div></div>
+            <ul className="measurement-chart" aria-label={variable === "seconds" ? "Время горения по испытаниям" : "Начальный диаметр по испытаниям"}>
+              {samples.map((sample) => (
+                <li key={sample.run} title={`${sample.run}: ${format.format(sample.diameter)} мм · ${format.format(sample.seconds)} с`}>
+                  <span>{sample.run}</span>
+                  <div className="measurement-track" aria-hidden="true"><div style={{ width: `${sample[variable] / axisMaximum * 100}%` }} /></div>
+                  <strong>{format.format(sample[variable])} {unit}</strong>
                 </li>
               ))}
             </ul>
@@ -38,12 +53,12 @@ export function StudyMeasurements({ studyId, chart = false }: { studyId: string;
           ) : (
             <table className="measurement-table">
               <thead><tr><th scope="col">Серия</th><th scope="col">Начальный диаметр, мм</th><th scope="col">Время горения, с</th></tr></thead>
-              <tbody>{flexSamples.map(({ run, diameter, seconds }) => (
+              <tbody>{samples.map(({ run, diameter, seconds }) => (
                 <tr key={run}><th scope="row">{run}</th><td>{format.format(diameter)}</td><td>{format.format(seconds)}</td></tr>
               ))}</tbody>
             </table>
           )}
-          <a href="https://ntrs.nasa.gov/citations/20150023456" target="_blank" rel="noreferrer">NASA/TP–2015-216046 · таблица IX <ArrowUpRight size={14} /></a>
+          <a href="https://ntrs.nasa.gov/citations/20150023456" target="_blank" rel="noreferrer">Источник данных NASA <ArrowUpRight size={14} /></a>
         </>
       )}
     </section>
@@ -64,7 +79,7 @@ export function StudySafety({ studyId }: { studyId: string }) {
   return (
     <section className="panel panel-padding measurement-panel">
       <h2><ShieldCheck size={17} /> Применение к пожарной безопасности</h2>
-      {topic ? <><p className="muted">Тема в демо-каталоге</p><p>{topic}</p></> : <p className="muted">Для этого эксперимента пока нет справки.</p>}
+      {topic ? <p>{topic}</p> : <p className="muted">Для этого эксперимента пока нет справки.</p>}
     </section>
   )
 }

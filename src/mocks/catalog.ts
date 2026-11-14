@@ -13,7 +13,7 @@ export const catalog = {
 } satisfies Record<string, { code: string; topics: number[]; subject: string; facility: string }>
 
 export function catalogEntry(id: string) {
-  return catalog[id as keyof typeof catalog]
+  return Object.hasOwn(catalog, id) ? catalog[id as keyof typeof catalog] : undefined
 }
 
 export const research: Study[] = [
