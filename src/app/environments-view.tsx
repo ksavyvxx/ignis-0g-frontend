@@ -299,7 +299,7 @@ export function EnvironmentsView({
                 y={yToPx(100)}
                 width={CHART.width - CHART.left - CHART.right}
                 height={yToPx(40) - yToPx(100)}
-                fill="#fef2f2"
+                fill="var(--error-surface)"
               />
               {/* Hypoxic / extinction shading <14% O2 */}
               <rect
@@ -307,7 +307,7 @@ export function EnvironmentsView({
                 y={yToPx(14)}
                 width={CHART.width - CHART.left - CHART.right}
                 height={yToPx(0) - yToPx(14)}
-                fill="#f0fdf4"
+                fill="var(--success-surface)"
               />
               {/* SEA Lunar / Rover target envelope (7.5-10.5 psi, 30-36% O2) */}
               <rect
@@ -315,13 +315,13 @@ export function EnvironmentsView({
                 y={yToPx(36)}
                 width={xToPx(10.5) - xToPx(7.5)}
                 height={yToPx(30) - yToPx(36)}
-                fill="#fff7ed"
-                stroke="#ea580c"
+                fill="var(--warning-surface)"
+                stroke="var(--combustion)"
                 strokeWidth="1.6"
                 strokeDasharray="4 3"
                 rx="4"
               />
-              <text x={xToPx(7.5) + 4} y={yToPx(36) - 5} fontSize="10" fontWeight="700" fill="#c2410c">
+              <text x={xToPx(7.5) + 4} y={yToPx(36) - 5} fontSize="10" fontWeight="700" fill="var(--combustion)">
                 SEA Луна/Ровер (30–34% O₂)
               </text>
 
@@ -333,7 +333,7 @@ export function EnvironmentsView({
                     y1={yToPx(yVal)}
                     x2={CHART.width - CHART.right}
                     y2={yToPx(yVal)}
-                    stroke="#e2e8f0"
+                    stroke="var(--border)"
                     strokeDasharray={yVal === 0 ? undefined : "2 3"}
                   />
                   <text
@@ -341,7 +341,7 @@ export function EnvironmentsView({
                     y={yToPx(yVal) + 3}
                     textAnchor="end"
                     fontSize="10"
-                    fill="#64748b"
+                    fill="var(--muted-foreground)"
                   >
                     {yVal}%
                   </text>
@@ -354,7 +354,7 @@ export function EnvironmentsView({
                     y1={CHART.top}
                     x2={xToPx(xVal)}
                     y2={CHART.height - CHART.bottom}
-                    stroke="#e2e8f0"
+                    stroke="var(--border)"
                     strokeDasharray={xVal === 0 ? undefined : "2 3"}
                   />
                   <text
@@ -362,7 +362,7 @@ export function EnvironmentsView({
                     y={CHART.height - CHART.bottom + 15}
                     textAnchor="middle"
                     fontSize="10"
-                    fill="#64748b"
+                    fill="var(--muted-foreground)"
                   >
                     {xVal}
                   </text>
@@ -370,10 +370,10 @@ export function EnvironmentsView({
               ))}
 
               {/* Zone labels */}
-              <text x={CHART.width - CHART.right - 6} y={yToPx(92)} textAnchor="end" fontSize="10" fill="#b91c1c" fontWeight="600">
+              <text x={CHART.width - CHART.right - 6} y={yToPx(92)} textAnchor="end" fontSize="10" fill="var(--color-error)" fontWeight="600">
                 Высокий риск O₂ (&gt;40%)
               </text>
-              <text x={CHART.width - CHART.right - 6} y={yToPx(5)} textAnchor="end" fontSize="10" fill="#15803d" fontWeight="600">
+              <text x={CHART.width - CHART.right - 6} y={yToPx(5)} textAnchor="end" fontSize="10" fill="var(--color-success)" fontWeight="600">
                 Порог затухания (&lt;14% O₂)
               </text>
 
@@ -384,7 +384,7 @@ export function EnvironmentsView({
                 textAnchor="middle"
                 fontSize="11"
                 fontWeight="600"
-                fill="#475569"
+                fill="var(--muted-foreground)"
               >
                 Давление (psi) · Земля = 14.7 psi
               </text>
@@ -394,7 +394,7 @@ export function EnvironmentsView({
                 textAnchor="middle"
                 fontSize="11"
                 fontWeight="600"
-                fill="#475569"
+                fill="var(--muted-foreground)"
                 transform={`rotate(-90 14 ${(CHART.top + CHART.height - CHART.bottom) / 2})`}
               >
                 Кислород O₂ (%)
@@ -419,17 +419,17 @@ export function EnvironmentsView({
                         y={y1}
                         width={Math.max(4, xToPx(pt.psiMax) - xToPx(pt.psiMin))}
                         height={Math.max(4, y2 - y1)}
-                        fill="#0f172a0c"
-                        stroke="#64748b55"
+                        fill="color-mix(in srgb, var(--muted-foreground) 8%, transparent)"
+                        stroke="var(--input)"
                         strokeWidth="1"
                         rx="3"
                       />
                     )}
                     {pt.o2Max > pt.o2Min && (
-                      <line x1={cx} y1={y1} x2={cx} y2={y2} stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+                      <line x1={cx} y1={y1} x2={cx} y2={y2} stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" />
                     )}
-                    <circle cx={cx} cy={midY} r={4} fill="#334155" stroke="#fff" strokeWidth="1.5" />
-                    <text x={cx + 6} y={midY + 3} fontSize="9.5" fontWeight="600" fill="#1e293b">
+                    <circle cx={cx} cy={midY} r={4} fill="var(--muted-foreground)" stroke="var(--background)" strokeWidth="1.5" />
+                    <text x={cx + 6} y={midY + 3} fontSize="9.5" fontWeight="600" fill="var(--foreground)">
                       {pt.label}
                     </text>
                   </g>
@@ -438,12 +438,12 @@ export function EnvironmentsView({
 
               {/* Reference environment pins */}
               <g>
-                <circle cx={xToPx(14.7)} cy={yToPx(21)} r={4.5} fill="#0284c7" stroke="#fff" strokeWidth="1.5" />
-                <text x={xToPx(14.7) + 6} y={yToPx(21) - 5} fontSize="9.5" fill="#0369a1" fontWeight="700">
+                <circle cx={xToPx(14.7)} cy={yToPx(21)} r={4.5} fill="var(--foreground)" stroke="var(--background)" strokeWidth="1.5" />
+                <text x={xToPx(14.7) + 6} y={yToPx(21) - 5} fontSize="9.5" fill="var(--foreground)" fontWeight="700">
                   Земля/МКС
                 </text>
-                <circle cx={xToPx(4.3)} cy={yToPx(98)} r={4.5} fill="#b91c1c" stroke="#fff" strokeWidth="1.5" />
-                <text x={xToPx(4.3) + 6} y={yToPx(96)} fontSize="9.5" fill="#b91c1c" fontWeight="700">
+                <circle cx={xToPx(4.3)} cy={yToPx(98)} r={4.5} fill="var(--color-error)" stroke="var(--background)" strokeWidth="1.5" />
+                <text x={xToPx(4.3) + 6} y={yToPx(96)} fontSize="9.5" fill="var(--color-error)" fontWeight="700">
                   Скафандр (4.3 psi)
                 </text>
               </g>
@@ -454,7 +454,7 @@ export function EnvironmentsView({
                 y1={CHART.top}
                 x2={markerX}
                 y2={CHART.height - CHART.bottom}
-                stroke="#ea580c"
+                stroke="var(--combustion)"
                 strokeWidth="1"
                 strokeDasharray="3 3"
                 opacity="0.7"
@@ -464,27 +464,27 @@ export function EnvironmentsView({
                 y1={markerY}
                 x2={CHART.width - CHART.right}
                 y2={markerY}
-                stroke="#ea580c"
+                stroke="var(--combustion)"
                 strokeWidth="1"
                 strokeDasharray="3 3"
                 opacity="0.7"
               />
-              <circle cx={markerX} cy={markerY} r={11} fill="#ea580c33" className="envelope-pulse-ring" />
-              <circle cx={markerX} cy={markerY} r={6} fill="#ea580c" stroke="#fff" strokeWidth="2" />
+              <circle cx={markerX} cy={markerY} r={11} fill="color-mix(in srgb, var(--combustion) 24%, transparent)" className="envelope-pulse-ring" />
+              <circle cx={markerX} cy={markerY} r={6} fill="var(--combustion)" stroke="var(--background)" strokeWidth="2" />
               <rect
                 x={Math.min(CHART.width - 134, markerX + 10)}
                 y={Math.max(CHART.top + 2, markerY - 22)}
                 width="118"
                 height="20"
                 rx="6"
-                fill="#0f172a"
+                fill="var(--combustion)"
               />
               <text
                 x={Math.min(CHART.width - 134, markerX + 10) + 6}
                 y={Math.max(CHART.top + 2, markerY - 22) + 13}
                 fontSize="10"
                 fontWeight="700"
-                fill="#fff"
+                fill="var(--accent-ink)"
               >
                 {pressurePsi.toFixed(1)} psi · {o2Pct}% O₂
               </text>

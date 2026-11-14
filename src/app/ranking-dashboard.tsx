@@ -129,7 +129,7 @@ export function RankingDashboard({
       </section>
 
       <div className="feed-section-head">
-        <span>КЛЮЧЕВЫЕ ИССЛЕДОВАНИЯ ({topStudies.length} из {studies.length})</span>
+        <h2 className="ranking-heading">Рейтинг исследований ({topStudies.length} из {studies.length})</h2>
         <button type="button" onClick={onOpenAllStudies}>
           Все исследования по колонкам <ChevronRight size={14} />
         </button>
