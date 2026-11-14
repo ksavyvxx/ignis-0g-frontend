@@ -1287,10 +1287,10 @@
   font-weight: 750;
   letter-spacing: -.03em;
 }
-.brand-ignis {
+.workspace-title .brand-ignis {
   color: #000000;
 }
-.brand-zero-g {
+.workspace-title .brand-zero-g {
   color: var(--brand);
 }
 
