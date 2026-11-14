@@ -468,6 +468,13 @@
   margin-top: 18px;
   border-bottom: 1px solid var(--border);
 }
+.study-tabs-inline button {
+  padding-inline: 12px;
+}
+.study-tabs-inline button[data-state="active"]::after {
+  left: 12px;
+  right: 12px;
+}
 
 .topic-program {
   background: var(--brand) !important;

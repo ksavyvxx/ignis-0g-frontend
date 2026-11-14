@@ -28,10 +28,10 @@ import { StudyMeasurements, StudyNexusGraph, StudySafety, StudyVideo } from "./s
 
 const views = [
   { id: "overview", name: "Обзор", icon: Layers3 },
-  { id: "measurements", name: "Данные и экспорт", icon: Database },
-  { id: "visualization", name: "Графики и Nexus", icon: ChartNoAxesCombined },
-  { id: "findings", name: "Выводы и связи", icon: Network },
-  { id: "safety", name: "Безопасность и Земля", icon: ShieldCheck },
+  { id: "measurements", name: "Данные", icon: Database },
+  { id: "visualization", name: "Графики", icon: ChartNoAxesCombined },
+  { id: "findings", name: "Выводы", icon: Network },
+  { id: "safety", name: "Безопасность", icon: ShieldCheck },
 ] as const
 
 export type View = (typeof views)[number]["id"]
