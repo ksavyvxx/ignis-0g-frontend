@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useQueries } from "@tanstack/react-query"
 import { ApiError, api } from "@/api/client"
 import { studyQueries } from "@/api/queries"
@@ -7,12 +7,22 @@ import { Button } from "@/components/ui/button"
 import { HARDWARE_RACKS, getQuickMeta } from "@/domain/knowledge"
 import type { CompareResponse, StudySummary } from "@/domain/types"
 
+type DiffFilter = "all" | "diff" | "same"
+
 function formatRange(range: unknown, unit: string) {
   if (!Array.isArray(range) || !range.length) return "н/д"
   const [min, max] = range as [number | null | undefined, number | null | undefined]
   if (min == null && max == null) return "н/д"
   if (min != null && max != null && min !== max) return `${min}–${max} ${unit}`
   return `${min ?? max} ${unit}`
+}
+
+const FUEL_STATE_LABELS: Record<string, string> = {
+  liquid: "Жидкое",
+  solid: "Твёрдое",
+  gas: "Газообразное",
+  aerosol_pyrolysis: "Дым / аэрозоли",
+  reference: "Эталон",
 }
 
 export function CompareView({
@@ -30,6 +40,7 @@ export function CompareView({
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiPending, setAiPending] = useState(false)
   const [focus, setFocus] = useState("")
+  const [diffFilter, setDiffFilter] = useState<DiffFilter>("all")
 
   const effectiveIds = compareIds.length >= 2
     ? compareIds.slice(0, 3)
@@ -37,6 +48,95 @@ export function CompareView({
 
   const detailQueries = useQueries({
     queries: effectiveIds.map((id) => studyQueries.detail(id)),
+  })
+
+  const diffRows = useMemo(() => {
+    const rawRows = [
+      {
+        label: "Программа / Pillar",
+        cells: effectiveIds.map((id) => {
+          const s = studies.find((item) => item.id === id)
+          return {
+            display: s ? `${s.category} · ${s.tags.join(", ")}` : "н/д",
+            key: s?.category ?? "н/д",
+          }
+        }),
+      },
+      {
+        label: "Установка (Facility)",
+        cells: effectiveIds.map((id) => {
+          const facility = getQuickMeta(id)?.facility ?? "н/д"
+          return {
+            display: facility,
+            key: facility === "н/д" ? "н/д" : facility.split(/[\s/]+/)[0],
+          }
+        }),
+      },
+      {
+        label: "Фаза и тип топлива",
+        cells: effectiveIds.map((id) => {
+          const m = getQuickMeta(id)
+          const phase = m?.fuelState ? (FUEL_STATE_LABELS[m.fuelState] ?? m.fuelState) : undefined
+          return {
+            display: `${phase ? `${phase}: ` : ""}${m?.fuelMaterial ?? "н/д"}${m?.sampleSizeMm ? ` (${m.sampleSizeMm})` : ""}`,
+            key: m?.fuelState ?? "н/д",
+          }
+        }),
+      },
+      {
+        label: "Кислород (O₂)",
+        cells: effectiveIds.map((id, idx) => {
+          const cond = detailQueries[idx]?.data?.conditions ?? getQuickMeta(id)?.conditions
+          const val = formatRange(cond?.o2_pct, "%")
+          return { display: val, key: val }
+        }),
+      },
+      {
+        label: "Давление",
+        cells: effectiveIds.map((id, idx) => {
+          const cond = detailQueries[idx]?.data?.conditions ?? getQuickMeta(id)?.conditions
+          const val = formatRange(cond?.pressure_kpa, "кПа")
+          return { display: val, key: val }
+        }),
+      },
+      {
+        label: "Скорость потока",
+        cells: effectiveIds.map((id, idx) => {
+          const cond = detailQueries[idx]?.data?.conditions ?? getQuickMeta(id)?.conditions
+          const val = formatRange(cond?.flow_cms, "см/с")
+          return { display: val, key: val }
+        }),
+      },
+      {
+        label: "Ключевой вывод",
+        cells: effectiveIds.map((id, idx) => {
+          const s = studies.find((item) => item.id === id)
+          const val = detailQueries[idx]?.data?.description ?? s?.description ?? "—"
+          return { display: val, key: val }
+        }),
+      },
+      {
+        label: "Пожарная безопасность",
+        cells: effectiveIds.map((_id, idx) => {
+          const imp = detailQueries[idx]?.data?.safety_implications[0]?.text ?? "см. карточку исследования"
+          return { display: imp, key: imp }
+        }),
+      },
+    ]
+
+    return rawRows.map((row) => {
+      const keys = row.cells.map((c) => c.key)
+      const isSame = keys.length > 1 && keys.every((k) => k !== "н/д" && k !== "—" && k === keys[0])
+      return { ...row, isSame }
+    })
+  }, [effectiveIds, studies, detailQueries])
+
+  const sameCount = diffRows.filter((r) => r.isSame).length
+  const diffCount = diffRows.length - sameCount
+  const visibleRows = diffRows.filter((row) => {
+    if (diffFilter === "same") return row.isSame
+    if (diffFilter === "diff") return !row.isSame
+    return true
   })
 
   function updateSlot(index: number, nextId: string) {
@@ -83,7 +183,7 @@ export function CompareView({
       <div>
         <h1>Сравнение исследований и оборудование МКС</h1>
         <p className="muted">
-          Сопоставьте 2–3 эксперимента по условиям атмосферы, типу топлива, переменным и применимости к пожарной безопасности, а также изучите группировку по бортовым стойкам.
+          Сопоставьте 2–3 эксперимента по условиям атмосферы, типу топлива, переменным и применимости к пожарной безопасности — с автоподсветкой сходств и различий.
         </p>
       </div>
 
@@ -131,6 +231,36 @@ export function CompareView({
           ))}
         </div>
 
+        <div className="compare-diff-toolbar">
+          <div className="diff-filter-pills" role="group" aria-label="Фильтр сходств и различий">
+            <button
+              type="button"
+              className={diffFilter === "all" ? "pill-active" : ""}
+              onClick={() => setDiffFilter("all")}
+            >
+              Все параметры ({diffRows.length})
+            </button>
+            <button
+              type="button"
+              className={diffFilter === "diff" ? "pill-active" : ""}
+              onClick={() => setDiffFilter("diff")}
+            >
+              Различия ({diffCount})
+            </button>
+            <button
+              type="button"
+              className={diffFilter === "same" ? "pill-active" : ""}
+              onClick={() => setDiffFilter("same")}
+            >
+              Сходства ({sameCount})
+            </button>
+          </div>
+          <div className="diff-legend">
+            <span className="diff-status-pill same">Совпадает</span>
+            <span className="diff-status-pill diff">Различается</span>
+          </div>
+        </div>
+
         <div className="compare-table-wrap">
           <table className="compare-table">
             <thead>
@@ -150,66 +280,29 @@ export function CompareView({
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th scope="row">Программа / Pillar</th>
-                {effectiveIds.map((id) => {
-                  const s = studies.find((item) => item.id === id)
-                  return <td key={id}>{s?.category} · {s?.tags.join(", ")}</td>
-                })}
-              </tr>
-              <tr>
-                <th scope="row">Установка (Facility)</th>
-                {effectiveIds.map((id) => (
-                  <td key={id}>{getQuickMeta(id)?.facility ?? "н/д"}</td>
-                ))}
-              </tr>
-              <tr>
-                <th scope="row">Топливо и размер</th>
-                {effectiveIds.map((id) => {
-                  const m = getQuickMeta(id)
-                  return (
-                    <td key={id}>
-                      {m?.fuelMaterial ?? "н/д"}
-                      {m?.sampleSizeMm ? ` (${m.sampleSizeMm})` : ""}
-                    </td>
-                  )
-                })}
-              </tr>
-              <tr>
-                <th scope="row">Кислород (O₂)</th>
-                {effectiveIds.map((id, idx) => {
-                  const cond = detailQueries[idx]?.data?.conditions ?? getQuickMeta(id)?.conditions
-                  return <td key={id}>{formatRange(cond?.o2_pct, "%")}</td>
-                })}
-              </tr>
-              <tr>
-                <th scope="row">Давление</th>
-                {effectiveIds.map((id, idx) => {
-                  const cond = detailQueries[idx]?.data?.conditions ?? getQuickMeta(id)?.conditions
-                  return <td key={id}>{formatRange(cond?.pressure_kpa, "кПа")}</td>
-                })}
-              </tr>
-              <tr>
-                <th scope="row">Скорость потока</th>
-                {effectiveIds.map((id, idx) => {
-                  const cond = detailQueries[idx]?.data?.conditions ?? getQuickMeta(id)?.conditions
-                  return <td key={id}>{formatRange(cond?.flow_cms, "см/с")}</td>
-                })}
-              </tr>
-              <tr>
-                <th scope="row">Ключевой вывод</th>
-                {effectiveIds.map((id, idx) => {
-                  const s = studies.find((item) => item.id === id)
-                  return <td key={id}>{detailQueries[idx]?.data?.description ?? s?.description ?? "—"}</td>
-                })}
-              </tr>
-              <tr>
-                <th scope="row">Пожарная безопасность</th>
-                {effectiveIds.map((id, idx) => {
-                  const imp = detailQueries[idx]?.data?.safety_implications[0]?.text
-                  return <td key={id}>{imp ?? "см. карточку исследования"}</td>
-                })}
-              </tr>
+              {visibleRows.length ? (
+                visibleRows.map((row) => (
+                  <tr key={row.label} className={row.isSame ? "compare-row-same" : "compare-row-diff"}>
+                    <th scope="row">
+                      <div className="compare-param-cell">
+                        <span>{row.label}</span>
+                        <span className={`diff-status-pill ${row.isSame ? "same" : "diff"}`}>
+                          {row.isSame ? "Совпадает" : "Различается"}
+                        </span>
+                      </div>
+                    </th>
+                    {row.cells.map((cell, idx) => (
+                      <td key={`${row.label}-${effectiveIds[idx]}`}>{cell.display}</td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={effectiveIds.length + 1} className="muted">
+                    Нет параметров, соответствующих выбранному фильтру Diff.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

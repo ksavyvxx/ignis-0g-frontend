@@ -1390,3 +1390,221 @@
   font: 11px var(--technical-font);
   color: var(--muted-foreground);
 }
+
+/* --- P0: 2D Flammability Envelope Simulator --- */
+.envelope-section {
+  display: grid;
+  gap: 16px;
+}
+.envelope-preset-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.envelope-preset-pills button,
+.diff-filter-pills button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  cursor: pointer;
+}
+.envelope-preset-pills button:hover,
+.diff-filter-pills button:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.envelope-preset-pills button.pill-active,
+.diff-filter-pills button.pill-active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.envelope-simulator-grid {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.envelope-controls {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+.envelope-slider-group {
+  display: grid;
+  gap: 5px;
+}
+.envelope-slider-group label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.envelope-slider-group label strong {
+  font-family: var(--technical-font);
+  font-size: 12px;
+  color: var(--brand);
+}
+.envelope-slider-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+.envelope-slider-group small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.envelope-chart-box {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+.envelope-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.envelope-study-marker.clickable {
+  cursor: pointer;
+}
+.envelope-study-marker.clickable:hover circle {
+  fill: var(--brand);
+  r: 5.5;
+}
+@keyframes envelope-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.16); }
+}
+.envelope-pulse-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: envelope-pulse 2.2s ease-in-out infinite;
+}
+
+.envelope-verdict-bar {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.envelope-verdict-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.envelope-verdict-bar p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.verdict-low {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+.verdict-nominal {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #075985;
+}
+.verdict-elevated {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+.verdict-critical {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.partial-g-inline-alert {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.partial-g-inline-alert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.envelope-matches {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* --- P0: Compare Diff Mode --- */
+.compare-diff-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.diff-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.diff-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compare-param-cell {
+  display: grid;
+  gap: 4px;
+}
+.diff-status-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.diff-status-pill.same {
+  background: #dcfce7;
+  color: #166534;
+}
+.diff-status-pill.diff {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  border: 1px solid #fed7aa;
+}
+.compare-table tr.compare-row-same {
+  background: #f0fdf470;
+}
+.compare-table tr.compare-row-diff {
+  background: #fff7ed55;
+}
+
+@media (max-width: 960px) {
+  .envelope-simulator-grid {
+    grid-template-columns: 1fr;
+  }
+}
