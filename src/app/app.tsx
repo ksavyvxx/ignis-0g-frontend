@@ -3,7 +3,6 @@ import { Tabs } from "radix-ui"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowRight, Bot, Menu, Search, X } from "@/components/ui/icons"
 import { studyQueries } from "@/api/queries"
-import { useMocks } from "@/api/client"
 import type { MissionScenarioId } from "@/domain/knowledge"
 import type { StudySummary } from "@/domain/types"
 import { AssistantChat, useStudyChat } from "./assistant-chat"
@@ -225,8 +224,8 @@ export function App() {
             <a className="workspace-title" href="/">
               <img src="/ignis-logo.png" alt="" className="brand-logo-img" />
               <span className="brand-wordmark">
-                <span className="brand-ignis">Ignis</span>{" "}
-                <span className="brand-zero-g">0g</span>
+                <span className="brand-ignis">IGNIS</span>{" "}
+                <span className="brand-zero-g">0G</span>
               </span>
             </a>
             {!assistantPage && inspectorIsDrawer && (
@@ -364,26 +363,6 @@ export function App() {
                   <div className="section-view">
                     <h1>ИИ-ассистент по исследованиям</h1>
                     <AssistantChat chat={chat} onSelectStudy={selectStudy} />
-                  </div>
-                )}
-
-                {section === "Настройки" && (
-                  <div className="section-view">
-                    <h1>Настройки рабочего пространства</h1>
-                    <section className="panel panel-padding workspace-settings">
-                      <h2>Панели и источник данных</h2>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={inspectorExpanded}
-                          onChange={(event) => setInspectorExpanded(event.target.checked)}
-                        />
-                        Показывать правую панель ИИ-ассистента на широком экране
-                      </label>
-                      <p className="muted">
-                        Режим API: <strong>{useMocks ? "Локальные моки (VITE_USE_MOCKS=true)" : "Подключён FastAPI бэкенд (/api/v1)"}</strong>
-                      </p>
-                    </section>
                   </div>
                 )}
               </>

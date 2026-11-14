@@ -1,13 +1,10 @@
 import {
-  Bot,
   FlaskConical,
   GitCompare,
   Layers3,
   Rocket,
   Search,
-  Settings,
 } from "@/components/ui/icons"
-import { useMocks } from "@/api/client"
 
 export const sections = [
   { name: "Дашборд и рейтинг", label: "Главная", icon: Layers3 },
@@ -16,7 +13,7 @@ export const sections = [
   { name: "Среды обитания", label: "Среды О₂", icon: Rocket },
 ] as const
 
-export type Section = (typeof sections)[number]["name"] | "ИИ-ассистент" | "Настройки"
+export type Section = (typeof sections)[number]["name"] | "ИИ-ассистент"
 
 interface SidebarProps {
   studiesCount: number
@@ -39,11 +36,10 @@ export function Sidebar({
         <a className="workspace-title" href="/">
           <img src="/ignis-logo.png" alt="" className="brand-logo-img" />
           <span className="brand-wordmark">
-            <span className="brand-ignis">Ignis</span>{" "}
-            <span className="brand-zero-g">0g</span>
+            <span className="brand-ignis">IGNIS</span>{" "}
+            <span className="brand-zero-g">0G</span>
           </span>
         </a>
-        <span className="brand-sub">NASA PSI</span>
       </div>
 
       <button type="button" className="sidebar-primary-cta" onClick={onOpenSearch}>
@@ -83,34 +79,6 @@ export function Sidebar({
           </button>
         ))}
       </nav>
-
-      <div className="sidebar-group-label">ИНСТРУМЕНТЫ</div>
-      <nav className="side-nav side-nav-compact" aria-label="Инструменты">
-        <button
-          type="button"
-          aria-current={section === "ИИ-ассистент" ? "page" : undefined}
-          onClick={() => onSection("ИИ-ассистент")}
-        >
-          <Bot size={17} />
-          <span>ИИ-ассистент</span>
-        </button>
-        <button
-          type="button"
-          aria-current={section === "Настройки" ? "page" : undefined}
-          onClick={() => onSection("Настройки")}
-        >
-          <Settings size={17} />
-          <span>Настройки</span>
-        </button>
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="sidebar-footer-avatar">PSI</div>
-        <div className="sidebar-footer-info">
-          <strong>{useMocks ? "Локальный каталог" : "FastAPI v1"}</strong>
-          <small>{studiesCount} исследований</small>
-        </div>
-      </div>
     </aside>
   )
 }
