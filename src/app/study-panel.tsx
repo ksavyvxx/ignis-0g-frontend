@@ -1,9 +1,10 @@
 import { useQueries } from "@tanstack/react-query"
-import { Tabs } from "radix-ui"
+import { useState } from "react"
+import { DropdownMenu, Tabs } from "radix-ui"
 import { studyQueries } from "@/api/queries"
-import { BookOpen, ChartNoAxesCombined, CheckCircle2, ChevronRight, FileText, Database, FlaskConical, Layers3, Network, ShieldCheck } from "@/components/ui/icons"
+import { Bookmark, MoreHorizontal, Share, ChartNoAxesCombined, CheckCircle2, ChevronRight, FileText, Database, FlaskConical, Layers3, Network, ShieldCheck } from "@/components/ui/icons"
 import type { Finding, Study } from "@/domain/types"
-import { catalogEntry } from "@/mocks/catalog"
+import { catalogEntry, topics } from "@/mocks/catalog"
 import { StudyMeasurements, StudySafety, StudyVideo } from "./study-evidence"
 import flame from "@/assets/flex-flame.webp"
 import { SourceList } from "./research-sources"
@@ -46,7 +47,47 @@ function Findings({ findings }: { findings: Finding[] }) {
   ))}</ul>
 }
 
-export function StudyPanel({ study }: { study: Study }) {
+function StudyActions({ study, onView }: { study: Study; onView: (view: View) => void }) {
+  const storageKey = `ignis-saved-study-${study.id}`
+  const [saved, setSaved] = useState(() => localStorage.getItem(storageKey) === "true")
+  const [notice, setNotice] = useState("")
+
+  function toggleSaved() {
+    if (saved) localStorage.removeItem(storageKey)
+    else localStorage.setItem(storageKey, "true")
+    setSaved(!saved)
+    setNotice(saved ? "Исследование удалено из закладок" : "Исследование сохранено в закладках")
+  }
+
+  async function share() {
+    const url = new URL("/explorer", window.location.origin)
+    url.searchParams.set("study", study.id)
+    try {
+      await navigator.clipboard.writeText(url.href)
+      setNotice("Ссылка скопирована")
+    } catch {
+      setNotice("Не удалось скопировать ссылку")
+    }
+  }
+
+  return <div className="study-actions">
+    <button type="button" className="icon-button" aria-label="Сохранить исследование" aria-pressed={saved} title="Закладка" onClick={toggleSaved}><Bookmark size={18} /></button>
+    <button type="button" className="icon-button" aria-label="Скопировать ссылку на исследование" title="Поделиться" onClick={() => void share()}><Share size={18} /></button>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild><button type="button" className="icon-button" aria-label="Дополнительные действия"><MoreHorizontal size={18} /></button></DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="end" sideOffset={6} className="study-action-menu">
+          {views.filter(({ id }) => id !== "overview").map(({ id, name }) =>
+            <DropdownMenu.Item key={id} onSelect={() => onView(id)}>{name}</DropdownMenu.Item>
+          )}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+    <span className="study-action-notice" role="status">{notice}</span>
+  </div>
+}
+
+export function StudyPanel({ study, onView }: { study: Study; onView: (view: View) => void }) {
   const [findings, sources, relations] = useQueries({
     queries: [studyQueries.findings(study.id), studyQueries.sources(study.id), studyQueries.relations(study.id)],
   })
@@ -62,9 +103,15 @@ export function StudyPanel({ study }: { study: Study }) {
   return (
     <>
       <header className="study-heading">
-        <div className="breadcrumb"><BookOpen size={15} /> NASA Experiments <ChevronRight size={13} /> <span>{entry?.code ?? study.id}</span></div>
-        <h1>{study.title}</h1>
+        <div className="breadcrumb">Каталог экспериментов <ChevronRight size={13} /> <span>{entry?.code ?? study.id}</span></div>
+        <div className="study-title-row">
+          <h1>{study.title}</h1>
+          <StudyActions key={study.id} study={study} onView={onView} />
+        </div>
         <p>{study.summary}</p>
+        {entry && <ul className="study-topics" aria-label="Темы исследования">
+          {entry.topics.map((index) => <li key={index}>{topics[index]}</li>)}
+        </ul>}
 
       </header>
       <Tabs.Content value="overview" className="study-content">

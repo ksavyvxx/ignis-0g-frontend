@@ -17,7 +17,6 @@ const Page = isExplorer
   : lazy(() => import("@/landing/landing").then(({ Landing }) => ({ default: Landing })))
 
 document.documentElement.lang = isExplorer ? "ru" : "en"
-document.documentElement.classList.toggle("dark", isExplorer)
 document.title = isExplorer ? "IGNIS 0G — Explorer" : "IGNIS 0G — Microgravity Research Explorer"
 
 class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {

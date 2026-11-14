@@ -1,13 +1,12 @@
 import { useState } from "react"
-import { ChevronDown, ChevronRight, FlaskConical, Folder, Network, FileText, Settings, Reset, Search, ShieldCheck, SlidersHorizontal, Bot } from "@/components/ui/icons"
+import { ChevronDown, ChevronRight, FlaskConical, Folder, FileText, Settings, Reset, Search, ShieldCheck, SlidersHorizontal, Bot } from "@/components/ui/icons"
 import type { Study } from "@/domain/types"
 import { catalogEntry, topics } from "@/mocks/catalog"
 
 export const sections = [
   { name: "Исследования", icon: FlaskConical },
-  { name: "Граф знаний", icon: Network },
   { name: "Миссии и безопасность", icon: ShieldCheck },
-  { name: "Ассистент", icon: Bot },
+  { name: "ИИ-ассистент", icon: Bot },
 ] as const
 
 export type Section = typeof sections[number]["name"] | "Коллекции" | "Источники" | "Настройки"
@@ -48,7 +47,7 @@ export function Sidebar({ studies, activeId, section, onSection, onStudy, pendin
     <aside className="sidebar" aria-label="Каталог исследований">
 
       <nav aria-label="Разделы" className="side-nav">
-        {sections.filter(({ name }) => name !== "Ассистент").map(({ name, icon: Icon }) => (
+        {sections.map(({ name, icon: Icon }) => (
           <button key={name} aria-current={section === name ? "page" : undefined} onClick={() => onSection(name)}>
             <Icon size={17} />{name}
           </button>
@@ -81,7 +80,7 @@ export function Sidebar({ studies, activeId, section, onSection, onStudy, pendin
             {!pending && !error && filtered.length === 0 && <p role="status">Исследования не найдены</p>}
             {filtered.map((study) => (
               <button className="tree-item" key={study.id} title={study.title} aria-current={activeId === study.id && section === "Исследования" ? "true" : undefined} onClick={() => onStudy(study.id)}>
-                {catalogEntry(study.id)?.code ?? study.title}
+                <Folder size={15} />{catalogEntry(study.id)?.code ?? study.title}
               </button>
             ))}
           </div>
@@ -95,7 +94,6 @@ export function Sidebar({ studies, activeId, section, onSection, onStudy, pendin
         <summary>Инструменты</summary>
         <nav className="side-nav" aria-label="Инструменты">
           <button aria-current={section === "Настройки" ? "page" : undefined} onClick={() => onSection("Настройки")}><Settings size={17} /> Настройки</button>
-          <button aria-current={section === "Ассистент" ? "page" : undefined} onClick={() => onSection("Ассистент")}><Bot size={17} /> Ассистент</button>
         </nav>
       </details>
     </aside>

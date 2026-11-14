@@ -74,9 +74,10 @@ export function AssistantChat({ chat, onOpenPage }: { chat: ReturnType<typeof us
   return (
     <section className="panel panel-padding assistant">
       <div className="assistant-heading">
-        <h2><Bot size={18} /> Ассистент</h2>
+        <h2><Bot size={20} /> ИИ-ассистент</h2>
         {onOpenPage && <Button type="button" variant="ghost" size="icon" aria-label="Открыть страницу ассистента" title="Открыть страницу ассистента" onClick={onOpenPage}><ArrowUpRight size={18} /></Button>}
       </div>
+      {code && <p className="assistant-study">Исследование <strong>{code}</strong></p>}
       <div className="chat-body" ref={log}>
       {code ? <>
         {sources.isPending && <QueryLoading label="Загрузка источников…" />}
@@ -94,13 +95,22 @@ export function AssistantChat({ chat, onOpenPage }: { chat: ReturnType<typeof us
       </div>
       {code && exchanges.length === 0 && (
         <div className="chat-start">
-          <p>Что хотите узнать об эксперименте?</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => { send(`Что изучает ${code}?`); input.current?.focus() }}>Цель эксперимента</Button>
+          <p>Вопросы об исследовании</p>
+          <div className="chat-suggestions">
+            {[
+              { label: "Что изучает эксперимент?", question: `Что изучает ${code}?` },
+              { label: "Какие есть выводы?", question: "Какие есть выводы?" },
+              { label: "Источники NASA", question: "Показать источники NASA" },
+            ].map(({ label, question }) => (
+              <Button key={label} type="button" variant="outline" size="sm"
+                onClick={() => { send(question); input.current?.focus() }}>{label}</Button>
+            ))}
+          </div>
         </div>
       )}
       </div>
       <form className="chat-form" onSubmit={submit}>
-        <textarea ref={input} rows={1} aria-label="Сообщение ассистенту" placeholder="Задать вопрос…" maxLength={1000}
+        <textarea ref={input} rows={1} aria-label="Сообщение ассистенту" placeholder="Задать вопрос об исследовании…" maxLength={1000}
           disabled={!code} value={draft} onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
