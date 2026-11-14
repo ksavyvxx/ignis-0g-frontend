@@ -27,7 +27,7 @@ function Brand() {
       <img src="/ignis-logo.png" alt="" width={28} height={28} style={{ borderRadius: 6 }} />
       <span>
         <span style={{ color: "#0f172a" }}>IGNIS</span>{" "}
-        <span style={{ color: "#ff0055" }}>0G</span>
+        <span style={{ color: "#1d7afc" }}>0G</span>
       </span>
     </a>
   )
