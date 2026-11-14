@@ -48,17 +48,6 @@ export function Sidebar({
         <kbd>Ctrl K</kbd>
       </button>
 
-      <div className="sidebar-quick-pair">
-        <button type="button" onClick={() => onSection("Сравнение и установки")}>
-          <GitCompare size={15} />
-          <span>Сравнить{compareCount ? ` (${compareCount})` : ""}</span>
-        </button>
-        <button type="button" onClick={() => onSection("Среды обитания")}>
-          <Rocket size={15} />
-          <span>Среды О₂</span>
-        </button>
-      </div>
-
       <div className="sidebar-group-label">НАВИГАЦИЯ</div>
       <nav aria-label="Разделы" className="side-nav">
         {sections.map(({ name, label, icon: Icon }) => (
