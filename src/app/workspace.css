@@ -1288,10 +1288,10 @@
   letter-spacing: -.03em;
 }
 .brand-ignis {
-  color: #1e202b;
+  color: #000000;
 }
 .brand-zero-g {
-  color: #ea580c;
+  color: var(--brand);
 }
 
 .nav-count-muted {

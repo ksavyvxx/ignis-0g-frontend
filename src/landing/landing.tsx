@@ -26,8 +26,8 @@ function Brand() {
     <a className="landing-brand" href="/" aria-label="IGNIS 0G home">
       <img src="/ignis-logo.png" alt="" width={28} height={28} style={{ borderRadius: 6 }} />
       <span>
-        <span style={{ color: "#0f172a" }}>IGNIS</span>{" "}
-        <span style={{ color: "#ea580c" }}>0G</span>
+        <span style={{ color: "#000000" }}>IGNIS</span>{" "}
+        <span style={{ color: "var(--brand)" }}>0G</span>
       </span>
     </a>
   )
