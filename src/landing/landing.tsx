@@ -22,7 +22,14 @@ const navigation = [
 ]
 
 function Brand() {
-  return <a className="landing-brand" href="/" aria-label="IGNIS 0G home"><span className="landing-brand-icon" aria-hidden="true"><i /><i /><i /><i /></span>IGNIS 0G</a>
+  return (
+    <a className="landing-brand" href="/" aria-label="Ignis 0g home">
+      <img src="/ignis-logo.png" alt="" width={28} height={28} style={{ borderRadius: 6 }} />
+      <span>
+        Ignis <span style={{ color: "var(--pink)" }}>0g</span>
+      </span>
+    </a>
+  )
 }
 
 function ExperimentSearch({ dialog }: { dialog: { current: HTMLDialogElement | null } }) {

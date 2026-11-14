@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { ArrowUpRight, Bot, Reset, Send, Sparkles } from "@/components/ui/icons"
+import { ArrowUpRight, Bot, ChevronRight, Reset, Send, Sparkles } from "@/components/ui/icons"
 import { ApiError, api } from "@/api/client"
 import type { ChatMessage, ChatResponse, Citation, StudySummary } from "@/domain/types"
 
@@ -115,10 +115,12 @@ function CitationList({ citations }: { citations: Citation[] }) {
 export function AssistantChat({
   chat,
   onOpenPage,
+  onCollapse,
   onSelectStudy,
 }: {
   chat: ReturnType<typeof useStudyChat>
   onOpenPage?: () => void
+  onCollapse?: () => void
   onSelectStudy?: (id: string) => void
 }) {
   const [draft, setDraft] = useState("")
@@ -164,8 +166,8 @@ export function AssistantChat({
             <Bot size={18} />
           </div>
           <div>
-            <h2>Ассистент PSI</h2>
-            <span>ИИ-помощник · {scope === "study" && study ? study.category : "Весь каталог"}</span>
+            <h2>ИИ-ассистент по исследованиям</h2>
+            <span>{scope === "study" && study ? study.category : "Весь каталог NASA PSI"}</span>
           </div>
         </div>
         <div className="assistant-head-actions">
@@ -183,6 +185,17 @@ export function AssistantChat({
               onClick={onOpenPage}
             >
               <ArrowUpRight size={17} />
+            </button>
+          )}
+          {onCollapse && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Свернуть чат"
+              title="Свернуть панель ИИ-ассистента"
+              onClick={onCollapse}
+            >
+              <ChevronRight size={18} />
             </button>
           )}
         </div>

@@ -12,6 +12,7 @@ import { EnvironmentsView } from "./environments-view"
 import { QueryFailure, QueryLoading } from "./query-feedback"
 import { RankingDashboard } from "./ranking-dashboard"
 import { Sidebar, type Section } from "./sidebar"
+import { StudiesDirectory } from "./studies-directory"
 import { isStudyView, StudyPanel, type View } from "./study-panel"
 import { WorkspacePane } from "./workspace-pane"
 import "./workspace.css"
@@ -35,7 +36,7 @@ function initialSectionFromUrl(): Section {
   if (view === "assistant" || view === "nexus" || sec === "assistant") return "ИИ-ассистент"
   if (sec === "compare") return "Сравнение и установки"
   if (sec === "environments") return "Среды обитания"
-  if (sec === "study" || params.has("study")) return "Исследования"
+  if (sec === "studies" || params.has("study")) return "Исследования"
   return "Дашборд и рейтинг"
 }
 
@@ -122,6 +123,9 @@ export function App() {
     () => new URLSearchParams(window.location.search).get("study") ?? undefined,
   )
   const [section, setSection] = useState<Section>(initialSectionFromUrl)
+  const [studyMode, setStudyMode] = useState<"directory" | "detail">(() =>
+    new URLSearchParams(window.location.search).has("study") ? "detail" : "directory",
+  )
   const [view, setView] = useState<View>(() => {
     const tab = new URLSearchParams(window.location.search).get("tab") ?? ""
     return isStudyView(tab) ? tab : "overview"
@@ -134,13 +138,17 @@ export function App() {
 
   const assistantPage = section === "ИИ-ассистент"
   const study = studies.find(({ id }) => id === selectedId) ?? studies[0]
-  const chat = useStudyChat(study)
+  const chat = useStudyChat(studyMode === "detail" && section === "Исследования" ? study : undefined)
 
   useEffect(() => {
     const params = new URLSearchParams()
-    if (study && section === "Исследования") {
-      params.set("study", study.id)
-      if (view !== "overview") params.set("tab", view)
+    if (section === "Исследования") {
+      if (studyMode === "detail" && study) {
+        params.set("study", study.id)
+        if (view !== "overview") params.set("tab", view)
+      } else {
+        params.set("section", "studies")
+      }
     } else if (section === "Сравнение и установки") {
       params.set("section", "compare")
     } else if (section === "Среды обитания") {
@@ -151,7 +159,7 @@ export function App() {
     const qs = params.toString()
     const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
     window.history.replaceState(null, "", nextUrl)
-  }, [section, study, view])
+  }, [section, studyMode, study, view])
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -167,7 +175,15 @@ export function App() {
   function selectStudy(id: string) {
     setSelectedId(id)
     setSection("Исследования")
+    setStudyMode("detail")
     setView("overview")
+    setSidebarOpen(false)
+    setInspectorOpen(false)
+  }
+
+  function openStudiesDirectory() {
+    setSection("Исследования")
+    setStudyMode("directory")
     setSidebarOpen(false)
     setInspectorOpen(false)
   }
@@ -207,8 +223,11 @@ export function App() {
               </button>
             )}
             <a className="workspace-title" href="/">
-              <span className="brand-square">0G</span>
-              <span>IGNIS</span>
+              <img src="/ignis-logo.png" alt="" className="brand-logo-img" />
+              <span className="brand-wordmark">
+                <span className="brand-ignis">Ignis</span>{" "}
+                <span className="brand-zero-g">0g</span>
+              </span>
             </a>
             {!assistantPage && inspectorIsDrawer && (
               <button
@@ -229,7 +248,7 @@ export function App() {
         <div className="workspace-grid" data-inspector={!assistantPage && inspectorExpanded}>
           <WorkspacePane
             id="catalog-dialog"
-            label="Навигация и каталог"
+            label="Навигация"
             className="sidebar-wrap"
             breakpoint={650}
             expanded
@@ -237,24 +256,32 @@ export function App() {
             onClose={() => setSidebarOpen(false)}
           >
             <Sidebar
-              studies={studies}
-              activeId={study?.id}
+              studiesCount={studies.length}
               section={section}
               compareCount={compareIds.length}
               onSection={(next) => {
                 setSection(next)
+                if (next === "Исследования") setStudyMode("directory")
                 setSidebarOpen(false)
                 setInspectorOpen(false)
               }}
-              onStudy={selectStudy}
               onOpenSearch={() => searchDialog.current?.showModal()}
-              pending={query.isPending}
-              error={query.isError}
-              retry={() => void query.refetch()}
             />
           </WorkspacePane>
 
           <main id="research-main" className="main-panel" tabIndex={-1}>
+            {!assistantPage && !inspectorIsDrawer && !inspectorExpanded && (
+              <button
+                type="button"
+                className="floating-ai-reopen"
+                onClick={() => setInspectorExpanded(true)}
+                title="Развернуть панель ИИ-ассистента"
+              >
+                <Bot size={17} />
+                <span>ИИ-ассистент по исследованиям</span>
+              </button>
+            )}
+
             {query.isPending && (
               <div className="empty-main">
                 <QueryLoading label="Загрузка каталога NASA PSI…" />
@@ -283,21 +310,31 @@ export function App() {
                     onSelectStudy={selectStudy}
                     onOpenCompare={() => setSection("Сравнение и установки")}
                     onOpenEnvironments={() => setSection("Среды обитания")}
+                    onOpenAllStudies={openStudiesDirectory}
                   />
                 )}
 
-                {section === "Исследования" && study && (
+                {section === "Исследования" && studyMode === "directory" && (
+                  <StudiesDirectory
+                    studies={studies}
+                    compareIds={compareIds}
+                    onToggleCompare={toggleCompare}
+                    onSelectStudy={selectStudy}
+                  />
+                )}
+
+                {section === "Исследования" && studyMode === "detail" && study && (
                   <StudyPanel
                     studySummary={study}
                     isCompared={compareIds.includes(study.id)}
                     onToggleCompare={() => toggleCompare(study.id)}
                     onSelectStudy={selectStudy}
-                    onBackToCatalog={() => setSection("Дашборд и рейтинг")}
+                    onBackToCatalog={openStudiesDirectory}
                     onView={setView}
                   />
                 )}
 
-                {section === "Исследования" && !study && (
+                {section === "Исследования" && studyMode === "detail" && !study && (
                   <div className="empty-main">
                     <p>В каталоге пока нет исследований.</p>
                   </div>
@@ -325,7 +362,7 @@ export function App() {
 
                 {assistantPage && (
                   <div className="section-view">
-                    <h1>ИИ-помощник по базе NASA PSI</h1>
+                    <h1>ИИ-ассистент по исследованиям</h1>
                     <AssistantChat chat={chat} onSelectStudy={selectStudy} />
                   </div>
                 )}
@@ -341,7 +378,7 @@ export function App() {
                           checked={inspectorExpanded}
                           onChange={(event) => setInspectorExpanded(event.target.checked)}
                         />
-                        Показывать правую панель ИИ-помощника на широком экране
+                        Показывать правую панель ИИ-ассистента на широком экране
                       </label>
                       <p className="muted">
                         Режим API: <strong>{useMocks ? "Локальные моки (VITE_USE_MOCKS=true)" : "Подключён FastAPI бэкенд (/api/v1)"}</strong>
@@ -356,7 +393,7 @@ export function App() {
           {!assistantPage && (
             <WorkspacePane
               id="inspector-dialog"
-              label="Ассистент PSI"
+              label="ИИ-ассистент по исследованиям"
               className="context-panel"
               breakpoint={1100}
               expanded={inspectorExpanded}
@@ -369,6 +406,7 @@ export function App() {
                   setSection("ИИ-ассистент")
                   setInspectorOpen(false)
                 }}
+                onCollapse={inspectorIsDrawer ? undefined : () => setInspectorExpanded(false)}
                 onSelectStudy={selectStudy}
               />
             </WorkspacePane>

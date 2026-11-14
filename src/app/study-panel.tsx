@@ -261,7 +261,7 @@ export function StudyPanel({
       <header className="study-heading">
         <div className="breadcrumb">
           <button type="button" className="breadcrumb-link" onClick={onBackToCatalog}>
-            Дашборд и рейтинг
+            Все исследования
           </button>
           <ChevronRight size={13} />
           <span>{studySummary.category}</span>
