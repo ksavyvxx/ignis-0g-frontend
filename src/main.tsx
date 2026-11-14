@@ -1,4 +1,3 @@
-import "material-symbols/rounded.css"
 import { Component, lazy, StrictMode, Suspense, type ReactNode } from "react"
 import { createRoot } from "react-dom/client"
 import "@fontsource/ibm-plex-mono/latin-400.css"

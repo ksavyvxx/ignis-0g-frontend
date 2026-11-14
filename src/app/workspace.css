@@ -315,12 +315,12 @@
 .study-topics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .study-topics li { padding: 4px 10px; border-radius: 999px; background: var(--accent); color: var(--muted-foreground); font-size: 12px; }
 .context-panel[open] > .assistant { min-height: 0; }
-.assistant-heading h2 .material-symbols-rounded { color: var(--brand); }
+.assistant-heading h2 svg { color: var(--brand); }
 .assistant-study { color: var(--muted-foreground); font-size: 13px; }
 .assistant-study strong { color: var(--accent-hover); }
 .assistant .chat-message { font-size: 14px; line-height: 1.55; }
 .assistant .chat-start { padding-top: 16px; }
-.assistant-toggle .material-symbols-rounded { color: var(--brand); }
+.assistant-toggle svg { color: var(--brand); }
 .context-panel[open]:modal .assistant-heading h2 { display: none; }
 .context-panel[open]:modal .assistant-heading { justify-content: end; }
 
@@ -359,8 +359,8 @@
 .study-topics li { background: var(--accent-soft); color: var(--accent-hover); }
 .context-panel { border-left: 1px solid var(--border); }
 .assistant-toggle { background: var(--brand); color: #fff; min-height: 38px; padding-inline: 14px; font-weight: 650; }
-.assistant-toggle .material-symbols-rounded { color: inherit; }
-.assistant-toggle:hover, .assistant-toggle[aria-expanded="true"] { background: #b90053; color: #fff; }
+.assistant-toggle svg { color: inherit; }
+.assistant-toggle:hover, .assistant-toggle[aria-expanded="true"] { background: var(--accent-hover); color: #fff; }
 .study-action-menu { font-family: var(--site-font); font-size: 14px; box-shadow: 0 4px 15px #15254517; }
 .workspace dialog::backdrop { background: #10121d66; }
 @media (max-width: 900px) {
