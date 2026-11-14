@@ -4,7 +4,6 @@ import {
   ChevronDown,
   ChevronRight,
   FlaskConical,
-  Folder,
   GitCompare,
   Layers3,
   Reset,
@@ -13,18 +12,18 @@ import {
   Settings,
   SlidersHorizontal,
 } from "@/components/ui/icons"
+import { useMocks } from "@/api/client"
 import { getQuickMeta } from "@/domain/knowledge"
 import type { StudySummary } from "@/domain/types"
 
 export const sections = [
-  { name: "Дашборд и рейтинг", icon: Layers3 },
-  { name: "Исследования", icon: FlaskConical },
-  { name: "Сравнение и установки", icon: GitCompare },
-  { name: "Среды обитания", icon: Rocket },
-  { name: "ИИ-ассистент", icon: Bot },
+  { name: "Дашборд и рейтинг", label: "Главная", icon: Layers3 },
+  { name: "Исследования", label: "Исследования", icon: FlaskConical },
+  { name: "Сравнение и установки", label: "Сравнение", icon: GitCompare },
+  { name: "Среды обитания", label: "Среды О₂", icon: Rocket },
 ] as const
 
-export type Section = (typeof sections)[number]["name"] | "Настройки"
+export type Section = (typeof sections)[number]["name"] | "ИИ-ассистент" | "Настройки"
 
 interface SidebarProps {
   studies: StudySummary[]
@@ -33,6 +32,7 @@ interface SidebarProps {
   compareCount: number
   onSection: (section: Section) => void
   onStudy: (id: string) => void
+  onOpenSearch: () => void
   pending: boolean
   error: boolean
   retry: () => void
@@ -45,6 +45,7 @@ export function Sidebar({
   compareCount,
   onSection,
   onStudy,
+  onOpenSearch,
   pending,
   error,
   retry,
@@ -75,15 +76,41 @@ export function Sidebar({
 
   return (
     <aside className="sidebar" aria-label="Навигация и каталог">
+      <div className="sidebar-brand-row">
+        <a className="workspace-title" href="/">
+          <span className="brand-square">0G</span>
+          <span>IGNIS</span>
+        </a>
+        <span className="brand-sub">NASA PSI</span>
+      </div>
+
+      <button type="button" className="sidebar-primary-cta" onClick={onOpenSearch}>
+        <Search size={16} />
+        <span>Быстрый поиск</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+
+      <div className="sidebar-quick-pair">
+        <button type="button" onClick={() => onSection("Сравнение и установки")}>
+          <GitCompare size={15} />
+          <span>Сравнить{compareCount ? ` (${compareCount})` : ""}</span>
+        </button>
+        <button type="button" onClick={() => onSection("Среды обитания")}>
+          <Rocket size={15} />
+          <span>Среды О₂</span>
+        </button>
+      </div>
+
       <nav aria-label="Разделы" className="side-nav">
-        {sections.map(({ name, icon: Icon }) => (
+        {sections.map(({ name, label, icon: Icon }) => (
           <button
             key={name}
+            type="button"
             aria-current={section === name ? "page" : undefined}
             onClick={() => onSection(name)}
           >
             <Icon size={17} />
-            <span>{name}</span>
+            <span>{label}</span>
             {name === "Сравнение и установки" && compareCount > 0 && (
               <span className="nav-count">{compareCount}</span>
             )}
@@ -91,13 +118,14 @@ export function Sidebar({
         ))}
       </nav>
 
+      <div className="sidebar-group-label">КАТАЛОГ PSI</div>
       <div className="library">
         <div className="search-row">
           <label className="search-field">
-            <Search size={15} />
+            <Search size={14} />
             <input
               type="search"
-              placeholder="Поиск по каталогу"
+              placeholder="Фильтр списка…"
               aria-label="Поиск исследований"
               value={search}
               onChange={(event) => {
@@ -114,7 +142,7 @@ export function Sidebar({
             data-filter-active={Boolean(selectedTag)}
             onClick={() => setShowFilters(!showFilters)}
           >
-            <SlidersHorizontal size={16} />
+            <SlidersHorizontal size={15} />
           </button>
         </div>
 
@@ -150,7 +178,7 @@ export function Sidebar({
           onClick={() => setExperimentsOpen(!experimentsOpen)}
         >
           {experimentsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <Folder size={16} /> NASA PSI ({filtered.length})
+          <span>Эксперименты ({filtered.length})</span>
         </button>
 
         {experimentsOpen && (
@@ -164,7 +192,7 @@ export function Sidebar({
                 </button>
               </p>
             )}
-            {!pending && !error && filtered.length === 0 && <p role="status">Исследования не найдены</p>}
+            {!pending && !error && filtered.length === 0 && <p role="status">Не найдено</p>}
             {filtered.map((study) => {
               const meta = getQuickMeta(study.id)
               const shortTitle = study.title.split(" (")[0]
@@ -191,18 +219,33 @@ export function Sidebar({
         )}
       </div>
 
-      <details className="navigation-group">
-        <summary>Инструменты</summary>
-        <nav className="side-nav" aria-label="Инструменты">
-          <button
-            type="button"
-            aria-current={section === "Настройки" ? "page" : undefined}
-            onClick={() => onSection("Настройки")}
-          >
-            <Settings size={17} /> Настройки
-          </button>
-        </nav>
-      </details>
+      <div className="sidebar-group-label">ИНСТРУМЕНТЫ</div>
+      <nav className="side-nav side-nav-compact" aria-label="Инструменты">
+        <button
+          type="button"
+          aria-current={section === "ИИ-ассистент" ? "page" : undefined}
+          onClick={() => onSection("ИИ-ассистент")}
+        >
+          <Bot size={17} />
+          <span>ИИ-помощник</span>
+        </button>
+        <button
+          type="button"
+          aria-current={section === "Настройки" ? "page" : undefined}
+          onClick={() => onSection("Настройки")}
+        >
+          <Settings size={17} />
+          <span>Настройки</span>
+        </button>
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-footer-avatar">PSI</div>
+        <div className="sidebar-footer-info">
+          <strong>{useMocks ? "Локальный каталог" : "FastAPI v1"}</strong>
+          <small>{studies.length} исследований</small>
+        </div>
+      </div>
     </aside>
   )
 }

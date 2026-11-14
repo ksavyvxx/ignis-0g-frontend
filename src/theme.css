@@ -2,48 +2,51 @@
 
 :root {
   color-scheme: light;
-  --site-font: "Inter Variable", Inter, system-ui, sans-serif;
-  --site-ink: #09090b;
-  --site-muted: #575b67;
-  --site-surface: #fdfdfd;
-  --site-line: #eaedf1;
-  --site-pink: #ff0071;
-  --site-action: #d60060;
+  --site-font: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --site-ink: #0f172a;
+  --site-muted: #64748b;
+  --site-surface: #f5f7fa;
+  --site-line: #e2e8f0;
+  --site-pink: #1d7afc;
+  --site-action: #1d7afc;
   --background: var(--site-surface);
-  --surface-navigation: #f8f8f9;
-  --card: #fff;
-  --accent: #edf1f6;
+  --surface-navigation: #ffffff;
+  --card: #ffffff;
+  --accent: #f1f5f9;
   --border: var(--site-line);
-  --input: #d8dde6;
+  --input: #cbd5e1;
   --foreground: var(--site-ink);
   --muted-foreground: var(--site-muted);
-  --brand: var(--site-action);
+  --brand: #1d7afc;
   --interactive: var(--brand);
-  --accent-hover: #a9004a;
-  --accent-soft: #fff0f7;
-  --accent-ink: #fff;
+  --accent-hover: #155ec7;
+  --accent-soft: #eef5ff;
+  --accent-ink: #ffffff;
   --heading: var(--site-ink);
-  --color-success: #237751;
-  --color-warning: #895100;
-  --color-error: #ad1834;
-  --link: var(--brand);
-  --ring: var(--brand);
-  --primary: var(--brand);
-  --primary-foreground: var(--accent-ink);
+  --color-success: #16a34a;
+  --color-warning: #b45309;
+  --color-error: #dc2626;
+  --link: #1d7afc;
+  --ring: #1d7afc;
+  --primary: #1d7afc;
+  --primary-foreground: #ffffff;
   --accent-foreground: var(--foreground);
-  --control-radius: 12px;
-  --panel-radius: 20px;
-  --radius: 12px;
+  --control-radius: 10px;
+  --panel-radius: 16px;
+  --radius: 10px;
   --space-2: 8px;
   --space-4: 16px;
-  --rail-width: 232px;
-  --inspector-width: 272px;
-  --workspace-gutter: clamp(16px, 2.4vw, 36px);
-  --section-width: 1120px;
+  --rail-width: 248px;
+  --inspector-width: 360px;
+  --workspace-gutter: clamp(16px, 2.2vw, 28px);
+  --section-width: 860px;
   --duration: 150ms;
-  --drawer-shadow: 8px 0 26px #0005;
+  --drawer-shadow: 8px 0 26px #0f172a24;
   --technical-font: "IBM Plex Mono", monospace;
 }
 
-body { font-size: 14px; }
+body {
+  font-family: var(--site-font);
+  font-size: 14px;
+}
 button, a, select { transition: background-color var(--duration), color var(--duration), border-color var(--duration); }

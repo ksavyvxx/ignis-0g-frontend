@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { ArrowUpRight, Bot, Send, Sparkles } from "@/components/ui/icons"
+import { ArrowUpRight, Bot, Reset, Send, Sparkles } from "@/components/ui/icons"
 import { ApiError, api } from "@/api/client"
-import { Button } from "@/components/ui/button"
 import type { ChatMessage, ChatResponse, Citation, StudySummary } from "@/domain/types"
 
 interface Exchange {
@@ -139,171 +138,183 @@ export function AssistantChat({
     input.current?.focus()
   }
 
-  const suggestions =
+  const starterSuggestions =
     scope === "study" && study
       ? [
-          `Какие основные выводы в ${study.title.split(" (")[0]}?`,
-          `Какие условия O₂, давления и оборудования использовались?`,
-          `Как результаты применимы к лунной базе (34% O₂)?`,
+          `Основные выводы ${study.title.split(" (")[0]}?`,
+          "Условия O₂, давления и оборудования?",
+          "Применимость к лунной базе (34% O₂)?",
         ]
       : [
-          "Какие эксперименты PSI наиболее важны для лунной базы (≥30% O₂)?",
-          "Как микрогравитация влияет на датчики дыма (SAME)?",
-          "Почему стандарт NASA-STD-6001 Test 1 не всегда консервативен в 0g?",
+          "Что важно для лунной базы (34% O₂)?",
+          "Как работает обнаружение дыма в 0g (SAME)?",
+          "Почему NASA-STD-6001 не всегда точен?",
         ]
 
+  const lastSuggestions =
+    exchanges.length > 0
+      ? exchanges[exchanges.length - 1]?.response?.suggested_questions ?? []
+      : starterSuggestions
+
   return (
-    <section className="panel panel-padding assistant">
-      <div className="assistant-heading">
-        <h2>
-          <Bot size={20} /> ИИ-ассистент PSI
-        </h2>
+    <section className="assistant">
+      <div className="assistant-header">
+        <div className="assistant-title-group">
+          <div className="assistant-avatar">
+            <Bot size={18} />
+          </div>
+          <div>
+            <h2>Ассистент PSI</h2>
+            <span>ИИ-помощник · {scope === "study" && study ? study.category : "Весь каталог"}</span>
+          </div>
+        </div>
         <div className="assistant-head-actions">
           {exchanges.length > 0 && (
-            <button type="button" className="chip-btn" onClick={clear}>
-              Очистить
+            <button type="button" className="icon-button" title="Новый диалог" aria-label="Очистить диалог" onClick={clear}>
+              <Reset size={16} />
             </button>
           )}
           {onOpenPage && (
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Открыть страницу ассистента"
+              className="icon-button"
+              aria-label="Развернуть ассистента"
               title="Развернуть на весь экран"
               onClick={onOpenPage}
             >
-              <ArrowUpRight size={18} />
-            </Button>
+              <ArrowUpRight size={17} />
+            </button>
           )}
         </div>
       </div>
 
-      <div className="assistant-scope-toggle" role="group" aria-label="Область поиска ассистента">
-        <button
-          type="button"
-          disabled={!study}
-          aria-pressed={scope === "study"}
-          onClick={() => setScope("study")}
-        >
-          {study ? study.category : "Исследование"}
-        </button>
-        <button
-          type="button"
-          aria-pressed={scope === "global"}
-          onClick={() => setScope("global")}
-        >
-          Весь каталог PSI
-        </button>
-      </div>
-
-      {scope === "study" && study && (
-        <p className="assistant-study">
-          Контекст: <strong>{study.title}</strong>
-        </p>
-      )}
-
       <div className="chat-body" ref={log}>
+        {exchanges.length === 0 && (
+          <div className="chat-intro-brief">
+            <p className="chat-intro-title">Сводка по базе NASA PSI:</p>
+            <ul>
+              <li>
+                <strong>Луна и роверы:</strong> 34% O₂ при 56.5 кПа (SoFIE, ACME BRE) повышают горючесть материалов.
+              </li>
+              <li>
+                <strong>Вентиляция МКС:</strong> слабый обдув HVAC (1–10 см/с) снижает порог O₂ для тканей (BASS-II).
+              </li>
+              <li>
+                <strong>Обнаружение и тушение:</strong> морфология дыма в 0g (SAME) и холодное пламя (FLEX).
+              </li>
+            </ul>
+            {study && onSelectStudy && (
+              <button type="button" className="inline-study-pill" onClick={() => onSelectStudy(study.id)}>
+                {study.title.split(" (")[0]} <ArrowUpRight size={12} />
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="chat-log" role="log" aria-label="История сообщений" tabIndex={exchanges.length ? 0 : undefined}>
           {exchanges.map(({ question, response, error }, index) => (
             <div className="chat-exchange" key={index}>
-              <p className="chat-message chat-question">
-                <strong>Вы</strong>
-                {question}
-              </p>
+              <p className="chat-message chat-question">{question}</p>
+
               {!response && !error && (
-                <div className="chat-message">
-                  <strong>Поиск по источникам NASA…</strong>
-                  <p className="muted">Формирую ответ с цитатами…</p>
+                <div className="chat-answer-block">
+                  <p className="muted">Ищу подтверждения в источниках NASA…</p>
                 </div>
               )}
+
               {error && (
-                <div className="chat-message chat-error">
-                  <strong>Ошибка запроса</strong>
+                <div className="chat-answer-block chat-error-text">
                   <p>{error}</p>
                 </div>
               )}
+
               {response && (
-                <div className="chat-message">
-                  <strong>
-                    {response.status === "insufficient_evidence"
-                      ? "Недостаточно данных в источниках"
-                      : "Ответ по базе PSI"}
-                  </strong>
-                  <p>{response.answer}</p>
-                  <CitationList citations={response.citations} />
+                <div className="chat-answer-block">
+                  {response.status === "insufficient_evidence" && (
+                    <span className="chat-status-tag">Недостаточно данных в источниках</span>
+                  )}
+                  <p className="chat-answer-text">{response.answer}</p>
                   {response.related_study_ids.length > 0 && onSelectStudy && (
-                    <div className="chat-related-studies">
-                      <span>Связанные:</span>
+                    <div className="chat-related-pills">
                       {response.related_study_ids.map((id) => (
-                        <button key={id} type="button" className="chip-btn" onClick={() => onSelectStudy(id)}>
-                          {id}
+                        <button key={id} type="button" className="inline-study-pill" onClick={() => onSelectStudy(id)}>
+                          {id} <ArrowUpRight size={12} />
                         </button>
                       ))}
                     </div>
                   )}
-                  {response.suggested_questions.length > 0 && (
-                    <div className="chat-followups">
-                      {response.suggested_questions.map((sq) => (
-                        <button key={sq} type="button" onClick={() => void send(sq)}>
-                          <Sparkles size={12} /> {sq}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <CitationList citations={response.citations} />
                 </div>
               )}
             </div>
           ))}
         </div>
-
-        {exchanges.length === 0 && (
-          <div className="chat-start">
-            <p>Быстрые вопросы по базе NASA PSI</p>
-            <div className="chat-suggestions">
-              {suggestions.map((q) => (
-                <Button
-                  key={q}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    void send(q)
-                    input.current?.focus()
-                  }}
-                >
-                  {q}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      <form className="chat-form" onSubmit={submit}>
-        <textarea
-          ref={input}
-          rows={1}
-          aria-label="Сообщение ассистенту"
-          placeholder={
-            scope === "study" && study
-              ? `Спросить о ${study.title.split(" (")[0]}…`
-              : "Спросить по всему каталогу PSI…"
-          }
-          maxLength={2000}
-          disabled={pending}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
-            event.preventDefault()
-            event.currentTarget.form?.requestSubmit()
-          }}
-        />
-        <Button type="submit" size="icon" aria-label="Отправить сообщение" disabled={pending || !draft.trim()}>
-          <Send size={16} />
-        </Button>
-      </form>
+      <div className="chat-composer-area">
+        {lastSuggestions.length > 0 && (
+          <div className="chat-pill-suggestions">
+            {lastSuggestions.map((q) => (
+              <button
+                key={q}
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  void send(q)
+                  input.current?.focus()
+                }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <form className="chat-composer-card" onSubmit={submit}>
+          <textarea
+            ref={input}
+            rows={2}
+            aria-label="Сообщение ассистенту"
+            placeholder="Спросите что угодно…"
+            maxLength={2000}
+            disabled={pending}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
+              event.preventDefault()
+              event.currentTarget.form?.requestSubmit()
+            }}
+          />
+          <div className="chat-composer-footer">
+            <div className="composer-scope-pills" role="group" aria-label="Область поиска">
+              <button
+                type="button"
+                disabled={!study}
+                aria-pressed={scope === "study"}
+                onClick={() => setScope("study")}
+              >
+                <Sparkles size={12} /> {study ? study.category : "Исследование"}
+              </button>
+              <button
+                type="button"
+                aria-pressed={scope === "global"}
+                onClick={() => setScope("global")}
+              >
+                Весь каталог
+              </button>
+            </div>
+            <button
+              type="submit"
+              className="composer-send-btn"
+              aria-label="Отправить сообщение"
+              disabled={pending || !draft.trim()}
+            >
+              <Send size={15} />
+            </button>
+          </div>
+        </form>
+      </div>
     </section>
   )
 }

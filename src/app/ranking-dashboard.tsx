@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { ArrowRight, GitCompare, Search, ShieldCheck, Sparkles } from "@/components/ui/icons"
+import { ArrowRight, ChevronRight, GitCompare, Search, ShieldCheck } from "@/components/ui/icons"
 import { Button } from "@/components/ui/button"
 import {
   MISSION_SCENARIOS,
@@ -19,6 +19,7 @@ export function RankingDashboard({
   onToggleCompare,
   onSelectStudy,
   onOpenCompare,
+  onOpenEnvironments,
 }: {
   studies: StudySummary[]
   scenario: MissionScenarioId
@@ -27,6 +28,7 @@ export function RankingDashboard({
   onToggleCompare: (id: string) => void
   onSelectStudy: (id: string) => void
   onOpenCompare: () => void
+  onOpenEnvironments: () => void
 }) {
   const [pillar, setPillar] = useState<string>("Все")
   const [program, setProgram] = useState<string>("Все")
@@ -59,31 +61,77 @@ export function RankingDashboard({
       .sort((a, b) => b.ranking.score - a.ranking.score || a.study.title.localeCompare(b.study.title))
   }, [studies, scenario, pillar, program, query])
 
+  const avgRelevance = ranked.length
+    ? Math.round(ranked.reduce((sum, item) => sum + item.ranking.score, 0) / ranked.length)
+    : 0
+
   return (
     <div className="section-view">
-      <div className="dashboard-hero">
-        <div>
-          <span className="eyebrow-tag">NASA PSI · Fire Safety Intelligence</span>
-          <h1>Дашборд и ранжирование исследований</h1>
-          <p className="muted">
-            Выберите целевую среду или инженерную задачу, чтобы отранжировать эксперименты NASA PSI по релевантности, сравнить условия среды и извлечь данные для моделей.
-          </p>
-        </div>
-        {compareIds.length >= 2 && (
-          <Button type="button" onClick={onOpenCompare}>
-            <GitCompare size={16} /> Сравнить выбранные ({compareIds.length})
-          </Button>
-        )}
+      <div className="feed-section-head">
+        <span>ФОКУС МИССИИ</span>
+        <button type="button" onClick={onOpenEnvironments}>
+          Среды обитания <ChevronRight size={14} />
+        </button>
       </div>
 
-      <section className="panel panel-padding scenario-panel" aria-label="Сценарий миссии">
-        <div className="scenario-header">
-          <h2>
-            <Sparkles size={17} /> Целевой сценарий ранжирования
-          </h2>
-          <span className="scenario-atmo">{activeScenario.targetAtmosphere}</span>
+      <section className="mission-spotlight-banner">
+        <div className="mission-spotlight-content">
+          <span className="spotlight-tag">Artemis · Exploration Atmosphere (SEA)</span>
+          <h2>Пожарная безопасность на Луне: ≥30–34% O₂ при ≤10.2 psi</h2>
+          <p>
+            Повышенный кислород ускоряет выход в скафандрах, но снижает порог воспламенения материалов. Сравните данные 0g и 1g из базы NASA PSI.
+          </p>
         </div>
-        <div className="scenario-pills" role="group" aria-label="Выбор сценария">
+        <button type="button" className="spotlight-cta" onClick={() => onScenarioChange("lunar-base")}>
+          Ранжировать под Луну <ArrowRight size={15} />
+        </button>
+      </section>
+
+      <section className="panel panel-padding summary-hero-card">
+        <div className="summary-hero-top">
+          <div>
+            <h1>Каталог пожарной безопасности NASA PSI</h1>
+            <p className="muted">
+              Сценарий: <strong>{activeScenario.label}</strong> · {activeScenario.targetAtmosphere}
+            </p>
+          </div>
+          {compareIds.length >= 2 && (
+            <Button type="button" size="sm" onClick={onOpenCompare}>
+              <GitCompare size={15} /> Сравнить ({compareIds.length})
+            </Button>
+          )}
+        </div>
+
+        <div className="metric-tiles">
+          <div className="metric-tile">
+            <strong>{studies.length}</strong>
+            <span>Исследований PSI</span>
+          </div>
+          <div className="metric-tile">
+            <strong>3</strong>
+            <span>Столпа (P / D / S)</span>
+          </div>
+          <div className="metric-tile">
+            <strong>4</strong>
+            <span>Стойки (CIR, MSG, Cygnus)</span>
+          </div>
+          <div className="metric-tile metric-tile-accent">
+            <strong>10–85%</strong>
+            <span>Диапазон O₂</span>
+          </div>
+        </div>
+
+        <div className="coverage-row">
+          <div className="coverage-meta">
+            <span>Средняя релевантность выборки: <strong>{avgRelevance}%</strong></span>
+            <span className="muted">Отобрано: {ranked.length} из {studies.length}</span>
+          </div>
+          <div className="coverage-track">
+            <div style={{ width: `${avgRelevance}%` }} />
+          </div>
+        </div>
+
+        <div className="scenario-pills" role="group" aria-label="Выбор сценария ранжирования">
           {MISSION_SCENARIOS.map((item) => (
             <button
               key={item.id}
@@ -96,7 +144,6 @@ export function RankingDashboard({
             </button>
           ))}
         </div>
-        <p className="muted">{activeScenario.description}</p>
       </section>
 
       <section className="filter-bar" aria-label="Фильтры каталога">
@@ -104,7 +151,7 @@ export function RankingDashboard({
           <Search size={15} />
           <input
             type="search"
-            placeholder="Поиск по эксперименту, топливу, установке (CIR, MSG, Cygnus)…"
+            placeholder="Поиск по эксперименту, топливу, установке…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -135,10 +182,6 @@ export function RankingDashboard({
           ))}
         </select>
       </section>
-
-      <div className="ranking-summary muted">
-        Найдено исследований: <strong>{ranked.length}</strong> · Сортировка по релевантности для сценария «{activeScenario.shortLabel}»
-      </div>
 
       <div className="ranking-grid">
         {ranked.map(({ study, meta, ranking }, index) => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { Tabs } from "radix-ui"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowRight, Bot, GitCompare, Search, X } from "@/components/ui/icons"
+import { ArrowRight, Bot, Menu, Search, X } from "@/components/ui/icons"
 import { studyQueries } from "@/api/queries"
 import { useMocks } from "@/api/client"
 import type { MissionScenarioId } from "@/domain/knowledge"
@@ -188,69 +188,48 @@ export function App() {
         if (isStudyView(value)) setView(value)
       }}
     >
-      <div className="workspace">
+      <div className="workspace workspace-shell">
         <a className="workspace-skip" href="#research-main">
           К содержимому
         </a>
-        <header className="workspace-header">
-          <a className="workspace-title" href="/">
-            IGNIS <span>0G</span>
-          </a>
-          {catalogIsDrawer && (
-            <button
-              type="button"
-              className="workspace-header-action"
-              aria-controls="catalog-dialog"
-              aria-expanded={sidebarOpen}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              Каталог
-            </button>
-          )}
 
-          <button
-            type="button"
-            className="header-search-trigger"
-            onClick={() => searchDialog.current?.showModal()}
-          >
-            <Search size={16} />
-            <span>Быстрый поиск по PSI…</span>
-            <kbd>Ctrl K</kbd>
-          </button>
-
-          {compareIds.length > 0 && (
-            <button
-              type="button"
-              className="workspace-header-action"
-              onClick={() => setSection("Сравнение и установки")}
-            >
-              <GitCompare size={17} /> Сравнение ({compareIds.length})
-            </button>
-          )}
-
-          {!assistantPage && (
-            <button
-              type="button"
-              className="workspace-header-action assistant-toggle"
-              aria-controls="inspector-dialog"
-              aria-expanded={inspectorIsDrawer ? inspectorOpen : inspectorExpanded}
-              onClick={() =>
-                inspectorIsDrawer
-                  ? setInspectorOpen(!inspectorOpen)
-                  : setInspectorExpanded(!inspectorExpanded)
-              }
-            >
-              <Bot size={18} /> ИИ-ассистент
-            </button>
-          )}
-        </header>
+        {(catalogIsDrawer || inspectorIsDrawer) && (
+          <header className="mobile-bar">
+            {catalogIsDrawer && (
+              <button
+                type="button"
+                className="workspace-header-action"
+                aria-controls="catalog-dialog"
+                aria-expanded={sidebarOpen}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                <Menu size={18} /> Меню
+              </button>
+            )}
+            <a className="workspace-title" href="/">
+              <span className="brand-square">0G</span>
+              <span>IGNIS</span>
+            </a>
+            {!assistantPage && inspectorIsDrawer && (
+              <button
+                type="button"
+                className="workspace-header-action assistant-toggle"
+                aria-controls="inspector-dialog"
+                aria-expanded={inspectorOpen}
+                onClick={() => setInspectorOpen(!inspectorOpen)}
+              >
+                <Bot size={18} /> ИИ
+              </button>
+            )}
+          </header>
+        )}
 
         <QuickSearchDialog dialog={searchDialog} studies={studies} onSelectStudy={selectStudy} />
 
         <div className="workspace-grid" data-inspector={!assistantPage && inspectorExpanded}>
           <WorkspacePane
             id="catalog-dialog"
-            label="Каталог исследований"
+            label="Навигация и каталог"
             className="sidebar-wrap"
             breakpoint={650}
             expanded
@@ -268,6 +247,7 @@ export function App() {
                 setInspectorOpen(false)
               }}
               onStudy={selectStudy}
+              onOpenSearch={() => searchDialog.current?.showModal()}
               pending={query.isPending}
               error={query.isError}
               retry={() => void query.refetch()}
@@ -302,6 +282,7 @@ export function App() {
                     onToggleCompare={toggleCompare}
                     onSelectStudy={selectStudy}
                     onOpenCompare={() => setSection("Сравнение и установки")}
+                    onOpenEnvironments={() => setSection("Среды обитания")}
                   />
                 )}
 
@@ -344,7 +325,7 @@ export function App() {
 
                 {assistantPage && (
                   <div className="section-view">
-                    <h1>ИИ-ассистент по базе NASA PSI</h1>
+                    <h1>ИИ-помощник по базе NASA PSI</h1>
                     <AssistantChat chat={chat} onSelectStudy={selectStudy} />
                   </div>
                 )}
@@ -360,7 +341,7 @@ export function App() {
                           checked={inspectorExpanded}
                           onChange={(event) => setInspectorExpanded(event.target.checked)}
                         />
-                        Показывать панель ИИ-ассистента на широком экране
+                        Показывать правую панель ИИ-помощника на широком экране
                       </label>
                       <p className="muted">
                         Режим API: <strong>{useMocks ? "Локальные моки (VITE_USE_MOCKS=true)" : "Подключён FastAPI бэкенд (/api/v1)"}</strong>
@@ -375,7 +356,7 @@ export function App() {
           {!assistantPage && (
             <WorkspacePane
               id="inspector-dialog"
-              label="ИИ-ассистент"
+              label="Ассистент PSI"
               className="context-panel"
               breakpoint={1100}
               expanded={inspectorExpanded}
